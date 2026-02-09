@@ -36,6 +36,16 @@
     margin-bottom: 0.5rem;
   }
 
+  .weekday-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #374151;
+    text-align: center;
+  }
+
   .grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -45,7 +55,7 @@
   .day {
     border: 1px solid #e5e7eb;
     border-radius: 6px;
-    min-height: 60px;
+    min-height: 70px;
     padding: 4px;
     font-size: 0.75rem;
     background: #f9fafb;
@@ -54,11 +64,11 @@
 
   .day-label {
     position: absolute;
-    top: 4px;
-    left: 6px;
+    bottom: 4px;
+    right: 6px;
     font-size: 0.65rem;
     font-weight: 600;
-    color: #374151;
+    color: #6b7280;
   }
 
   .therapy {
@@ -69,13 +79,13 @@
     font-weight: 600;
     font-size: 0.7rem;
     text-align: center;
-    margin-top: 16px;
+    margin-top: 18px;
   }
 
   .icon {
     font-size: 1.2rem;
     text-align: center;
-    margin-top: 18px;
+    margin-top: 22px;
   }
 
   /* ===== Table ===== */
@@ -142,6 +152,7 @@
 /* ===== Helpers ===== */
 const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;}
 const fmt=d=>d.toLocaleDateString("de-DE");
+const weekdays=["So","Mo","Di","Mi","Do","Fr","Sa"];
 
 function subtractWorkdays(d,n){
   const x=new Date(d);
@@ -194,31 +205,38 @@ document.getElementById("therapyForm").addEventListener("submit",e=>{
 
   /* ---- Graphic: only first cycle ---- */
   const c=cycles[0];
-  let gHTML=`<div class="cycle-title">Zyklus 1</div><div class="grid">`;
 
+  let header=`<div class="weekday-header">`;
+  c.days.slice(0,7).forEach(d=>{
+    header+=`<div>${weekdays[d.date.getDay()]}</div>`;
+  });
+  header+=`</div>`;
+
+  let grid=`<div class="grid">`;
   c.days.forEach(d=>{
-    gHTML+=`<div class="day">`;
-
-    if(d.day===1 || d.day===8){
-      gHTML+=`<div class="day-label">d${d.day}</div>`;
-    }
+    grid+=`<div class="day">`;
 
     d.events.forEach(ev=>{
       if(ev.type==="therapy")
-        gHTML+=`<div class="therapy">${ev.label}</div>`;
+        grid+=`<div class="therapy">${ev.label}</div>`;
       if(ev.type==="injection")
-        gHTML+=`<div class="icon">💉</div>`;
+        grid+=`<div class="icon">💉</div>`;
       if(ev.type==="lab")
-        gHTML+=`<div class="icon">🩸</div>`;
+        grid+=`<div class="icon">🩸</div>`;
     });
 
-    gHTML+=`</div>`;
+    if(d.day===1 || d.day===8){
+      grid+=`<div class="day-label">d${d.day}</div>`;
+    }
+
+    grid+=`</div>`;
   });
+  grid+=`</div>`;
 
-  gHTML+=`</div>`;
-  document.getElementById("graphic").innerHTML=gHTML;
+  document.getElementById("graphic").innerHTML =
+    `<div class="cycle-title">Zyklus 1</div>${header}${grid}`;
 
-  /* ---- Table: all cycles ---- */
+  /* ---- Table ---- */
   let table=`
     <table>
       <tr>
