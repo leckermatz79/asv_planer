@@ -1,128 +1,99 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <title>Chemotherapie – Therapieplan</title>
+<meta charset="UTF-8">
+<title>Therapieplan – alle Zyklen</title>
 
-  <style>
-    :root {
-      --primary: #dc2626;
-      --bg: #f3f4f6;
-      --card: #ffffff;
-      --text: #1f2937;
-    }
-
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 2rem;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: auto;
-    }
-
-    form, .plan {
-      background: var(--card);
-      padding: 1.5rem;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-      margin-bottom: 2rem;
-    }
-
-    form {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1rem;
-    }
-
-    label {
-      font-size: 0.85rem;
-      font-weight: 600;
-      display: block;
-      margin-bottom: 0.25rem;
-    }
-
-    input, select, button {
-      padding: 0.6rem;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      font-size: 0.95rem;
-      width: 100%;
-    }
-
-    button {
-      grid-column: 1 / -1;
-      background: var(--primary);
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .plan {
-      display: none;
-      border-left: 8px solid var(--primary);
-    }
-
-    ul {
-      padding-left: 1.2rem;
-    }
-
-    @media print {
-      form, button {
-        display: none;
-      }
-      body {
-        background: white;
-      }
-    }
-  </style>
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    background: #f3f4f6;
+    padding: 2rem;
+  }
+  .container { max-width: 900px; margin: auto; }
+  form, .plan {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  }
+  label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  input, button {
+    width: 100%;
+    padding: 0.6rem;
+    margin-top: 0.25rem;
+  }
+  button {
+    background: #dc2626;
+    color: white;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+  }
+  th, td {
+    padding: 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+  }
+  .holiday {
+    color: #dc2626;
+    font-weight: 600;
+  }
+  @media print {
+    form, button { display: none; }
+    body { background: white; }
+  }
+</style>
 </head>
 
 <body>
 <div class="container">
 
-  <h1>Therapieplan erstellen</h1>
+<h1>Therapieplan EC q2w</h1>
 
-  <form id="therapyForm">
-    <div>
-      <label>Vorname</label>
-      <input required id="vorname">
-    </div>
+<form id="therapyForm">
+  <label>
+    Vorname
+    <input id="vorname" required>
+  </label>
 
-    <div>
-      <label>Nachname</label>
-      <input required id="nachname">
-    </div>
+  <label>
+    Nachname
+    <input id="nachname" required>
+  </label>
 
-    <div>
-      <label>Geburtsdatum (optional)</label>
-      <input id="geburt" placeholder="TT.MM.JJJJ">
-    </div>
+  <label>
+    Geburtsdatum (optional, TT.MM.JJJJ)
+    <input id="geburt" placeholder="TT.MM.JJJJ">
+  </label>
 
-    <div>
-      <label>Schema</label>
-      <select id="schema">
-        <option value="EC-q2w">EC q2w</option>
-      </select>
-    </div>
+  <label>
+    Startdatum Zyklus 1
+    <input type="date" id="startdatum" required>
+  </label>
 
-    <div>
-      <label>Startdatum Zyklus 1</label>
-      <input type="date" id="startdatum" required>
-    </div>
+  <button>Plan berechnen</button>
+</form>
 
-    <button type="submit">Therapieplan anzeigen</button>
-  </form>
+<div class="plan" id="plan" style="display:none">
+  <h2 id="title"></h2>
+  <div id="patient"></div>
+  <div id="table"></div>
+  <button onclick="window.print()">Drucken / PDF</button>
+</div>
 
-  <div class="plan" id="plan">
-    <h2 id="planTitle"></h2>
-    <div id="planDetails"></div>
-    <button onclick="window.print()">Drucken / PDF</button>
-  </div>
 </div>
 
 <!-- ===================== -->
@@ -132,7 +103,6 @@
 <script type="application/json" id="schema-EC-q2w">
 {
   "name": "EC q2w",
-  "farbe": "#dc2626",
   "zyklus_tage": 14,
   "anzahl_zyklen": 4,
   "events": [
@@ -145,79 +115,144 @@
 </script>
 
 <script>
-  function isValidBirthdate(v) {
-    if (!v) return true;
-    return /^(\d{2})\.(\d{2})\.(\d{4})$/.test(v);
+/* ---------- Geburtsdatum ---------- */
+function isValidBirthdate(value) {
+  if (!value) return true;
+
+  const regex = /^(\d{2})\.(\d{2})\.(\d{4})$/;
+  const match = value.match(regex);
+  if (!match) return false;
+
+  const day = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10) - 1;
+  const year = parseInt(match[3], 10);
+
+  const date = new Date(year, month, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month ||
+    date.getDate() !== day
+  ) return false;
+
+  if (date > new Date()) return false;
+
+  return true;
+}
+
+/* ---------- Datumshilfen ---------- */
+const addDays = (d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+const fmt = d => d.toLocaleDateString("de-DE");
+
+function subtractWorkdays(d,n){
+  const x=new Date(d);
+  while(n>0){
+    x.setDate(x.getDate()-1);
+    const w=x.getDay();
+    if(w!==0 && w!==6) n--;
   }
+  return x;
+}
 
-  function addDays(d, n) {
-    const x = new Date(d);
-    x.setDate(x.getDate() + n);
-    return x;
-  }
+/* ---------- Feiertage NRW ---------- */
+function easterSunday(y){
+  const f=Math.floor;
+  const G=y%19,C=f(y/100),
+    H=(C-f(C/4)-f((8*C+13)/25)+19*G+15)%30,
+    I=H-f(H/28)*(1-f(29/(H+1))*f((21-G)/11)),
+    J=(y+f(y/4)+I+2-C+f(C/4))%7,
+    L=I-J;
+  return new Date(y,2,28+L);
+}
 
-  function subtractWorkdays(d, n) {
-    const x = new Date(d);
-    while (n > 0) {
-      x.setDate(x.getDate() - 1);
-      const wd = x.getDay();
-      if (wd !== 0 && wd !== 6) n--;
-    }
-    return x;
-  }
+function getNRWHolidays(year){
+  const e=easterSunday(year);
+  return [
+    new Date(year,0,1),
+    new Date(year,4,1),
+    new Date(year,9,3),
+    new Date(year,11,25),
+    new Date(year,11,26),
+    addDays(e,-2),
+    addDays(e,1),
+    addDays(e,39),
+    addDays(e,50),
+    addDays(e,60)
+  ].map(d=>d.toISOString().slice(0,10));
+}
 
-  function fmt(d) {
-    return d.toLocaleDateString("de-DE");
-  }
+function isHoliday(date){
+  return getNRWHolidays(date.getFullYear())
+    .includes(date.toISOString().slice(0,10));
+}
 
-  function calculateCycle(start, schema) {
-    const startDate = new Date(start);
-    const endDate = addDays(startDate, schema.zyklus_tage - 1);
+/* ---------- Zyklusberechnung ---------- */
+function calculateAllCycles(start, schema){
+  const all=[];
+  for(let c=0;c<schema.anzahl_zyklen;c++){
+    const cycleStart=addDays(start,c*schema.zyklus_tage);
+    const cycleEnd=addDays(cycleStart,schema.zyklus_tage-1);
 
-    return schema.events.map(e => {
-      let date;
-      if (e.day) {
-        date = addDays(startDate, e.day - 1);
-      }
-      if (e.workdays_before_cycle_end) {
-        date = subtractWorkdays(endDate, e.workdays_before_cycle_end);
-      }
-      return { label: e.label, date };
+    schema.events.forEach(ev=>{
+      let d;
+      if(ev.day) d=addDays(cycleStart,ev.day-1);
+      if(ev.workdays_before_cycle_end)
+        d=subtractWorkdays(cycleEnd,ev.workdays_before_cycle_end);
+
+      all.push({
+        cycle:c+1,
+        date:d,
+        label:ev.label,
+        holiday:isHoliday(d)
+      });
     });
   }
+  return all;
+}
 
-  document.getElementById("therapyForm").addEventListener("submit", e => {
-    e.preventDefault();
+/* ---------- UI ---------- */
+document.getElementById("therapyForm").addEventListener("submit",e=>{
+  e.preventDefault();
 
-    const geburt = document.getElementById("geburt").value;
-    if (!isValidBirthdate(geburt)) {
-      alert("Geburtsdatum bitte als TT.MM.JJJJ");
-      return;
-    }
+  const geburt = document.getElementById("geburt").value;
+  if (!isValidBirthdate(geburt)) {
+    alert("Bitte ein gültiges Geburtsdatum im Format TT.MM.JJJJ eingeben.");
+    document.getElementById("geburt").focus();
+    return;
+  }
 
-    const vor = document.getElementById("vorname").value;
-    const nach = document.getElementById("nachname").value;
-    const start = document.getElementById("startdatum").value;
+  const vor = document.getElementById("vorname").value;
+  const nach = document.getElementById("nachname").value;
+  const start = new Date(document.getElementById("startdatum").value);
+  const schema = JSON.parse(
+    document.getElementById("schema-EC-q2w").textContent
+  );
 
-    const schema = JSON.parse(
-      document.getElementById("schema-EC-q2w").textContent
-    );
+  const rows = calculateAllCycles(start, schema);
 
-    const events = calculateCycle(start, schema);
+  document.getElementById("patient").innerHTML = `
+    <strong>Patient:</strong> ${vor} ${nach}<br>
+    <strong>Geburtsdatum:</strong> ${geburt || "—"}
+  `;
 
-    let html = `<p><strong>Patient:</strong> ${vor} ${nach}</p>`;
-    html += `<ul>`;
-    events.forEach(ev => {
-      html += `<li>${fmt(ev.date)} – ${ev.label}</li>`;
-    });
-    html += `</ul>`;
-
-    document.getElementById("planTitle").textContent =
-      `${schema.name} – Zyklus 1`;
-    document.getElementById("planDetails").innerHTML = html;
-    document.getElementById("plan").style.display = "block";
+  let html="<table><tr><th>Zyklus</th><th>Datum</th><th>Maßnahme</th></tr>";
+  rows.forEach(r=>{
+    html+=`
+      <tr>
+        <td>${r.cycle}</td>
+        <td class="${r.holiday?'holiday':''}">
+          ${fmt(r.date)} ${r.holiday?'⚠️ Feiertag':''}
+        </td>
+        <td>${r.label}</td>
+      </tr>`;
   });
-</script>
+  html+="</table>";
 
+  document.getElementById("title").textContent =
+    "Therapieplan – alle Zyklen";
+  document.getElementById("table").innerHTML = html;
+  document.getElementById("plan").style.display="block";
+});
+</script>
 </body>
 </html>
