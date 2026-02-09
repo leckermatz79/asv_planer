@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Therapieplan – alle Zyklen</title>
+<title>Therapieplan – EC q2w</title>
 
 <style>
   body {
@@ -10,7 +10,8 @@
     background: #f3f4f6;
     padding: 2rem;
   }
-  .container { max-width: 900px; margin: auto; }
+  .container { max-width: 1000px; margin: auto; }
+
   form, .plan {
     background: white;
     padding: 1.5rem;
@@ -18,25 +19,66 @@
     margin-bottom: 2rem;
     box-shadow: 0 10px 25px rgba(0,0,0,0.08);
   }
-  label {
-    font-weight: 600;
-    font-size: 0.85rem;
-    display: block;
-    margin-bottom: 0.5rem;
-  }
+
+  label { font-weight: 600; font-size: 0.85rem; display:block; }
   input, button {
-    width: 100%;
-    padding: 0.6rem;
-    margin-top: 0.25rem;
+    width: 100%; padding: 0.6rem; margin-top: 0.25rem;
   }
   button {
+    background: #dc2626; color: white;
+    border: none; border-radius: 8px;
+    font-weight: 600; cursor: pointer;
+  }
+
+  /* ===== Graphic Schedule ===== */
+  .cycle-title {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+
+  .day {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    min-height: 60px;
+    padding: 4px;
+    font-size: 0.75rem;
+    background: #f9fafb;
+    position: relative;
+  }
+
+  .day-label {
+    position: absolute;
+    top: 4px;
+    left: 6px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .therapy {
     background: #dc2626;
     color: white;
+    border-radius: 4px;
+    padding: 4px;
     font-weight: 600;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
+    font-size: 0.7rem;
+    text-align: center;
+    margin-top: 16px;
   }
+
+  .icon {
+    font-size: 1.2rem;
+    text-align: center;
+    margin-top: 18px;
+  }
+
+  /* ===== Table ===== */
   table {
     width: 100%;
     border-collapse: collapse;
@@ -47,10 +89,7 @@
     border-bottom: 1px solid #e5e7eb;
     text-align: left;
   }
-  .holiday {
-    color: #dc2626;
-    font-weight: 600;
-  }
+
   @media print {
     form, button { display: none; }
     body { background: white; }
@@ -64,85 +103,45 @@
 <h1>Therapieplan EC q2w</h1>
 
 <form id="therapyForm">
-  <label>
-    Vorname
-    <input id="vorname" required>
-  </label>
-
-  <label>
-    Nachname
-    <input id="nachname" required>
-  </label>
-
-  <label>
-    Geburtsdatum (optional, TT.MM.JJJJ)
-    <input id="geburt" placeholder="TT.MM.JJJJ">
-  </label>
-
-  <label>
-    Startdatum Zyklus 1
-    <input type="date" id="startdatum" required>
-  </label>
-
+  <label>Vorname<input id="vorname" required></label>
+  <label>Nachname<input id="nachname" required></label>
+  <label>Geburtsdatum (optional)<input id="geburt" placeholder="TT.MM.JJJJ"></label>
+  <label>Startdatum Zyklus 1<input type="date" id="startdatum" required></label>
   <button>Plan berechnen</button>
 </form>
 
 <div class="plan" id="plan" style="display:none">
-  <h2 id="title"></h2>
-  <div id="patient"></div>
+
+  <h2>Grafische Übersicht (ein Zyklus)</h2>
+  <div id="graphic"></div>
+
+  <h2 style="margin-top:2rem">Tabellarische Übersicht (alle Zyklen)</h2>
   <div id="table"></div>
+
   <button onclick="window.print()">Drucken / PDF</button>
 </div>
 
 </div>
 
-<!-- ===================== -->
-<!-- Schema-Definition     -->
-<!-- ===================== -->
-
+<!-- ===== Schema ===== -->
 <script type="application/json" id="schema-EC-q2w">
 {
   "name": "EC q2w",
   "zyklus_tage": 14,
   "anzahl_zyklen": 4,
   "events": [
-    { "label": "Chemotherapie EC", "day": 1 },
-    { "label": "Pegfilgrastim", "day": 2 },
-    { "label": "Laborkontrolle", "day": 8 },
-    { "label": "Laborkontrolle prä-Zyklus", "workdays_before_cycle_end": 2 }
+    { "label": "EC", "type": "therapy", "day": 1 },
+    { "label": "Pegfilgrastim", "type": "injection", "day": 2 },
+    { "label": "Labor", "type": "lab", "day": 8 },
+    { "label": "Labor", "type": "lab", "workdays_before_cycle_end": 2 }
   ]
 }
 </script>
 
 <script>
-/* ---------- Geburtsdatum ---------- */
-function isValidBirthdate(value) {
-  if (!value) return true;
-
-  const regex = /^(\d{2})\.(\d{2})\.(\d{4})$/;
-  const match = value.match(regex);
-  if (!match) return false;
-
-  const day = parseInt(match[1], 10);
-  const month = parseInt(match[2], 10) - 1;
-  const year = parseInt(match[3], 10);
-
-  const date = new Date(year, month, day);
-
-  if (
-    date.getFullYear() !== year ||
-    date.getMonth() !== month ||
-    date.getDate() !== day
-  ) return false;
-
-  if (date > new Date()) return false;
-
-  return true;
-}
-
-/* ---------- Datumshilfen ---------- */
-const addDays = (d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;}
-const fmt = d => d.toLocaleDateString("de-DE");
+/* ===== Helpers ===== */
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+const fmt=d=>d.toLocaleDateString("de-DE");
 
 function subtractWorkdays(d,n){
   const x=new Date(d);
@@ -154,103 +153,98 @@ function subtractWorkdays(d,n){
   return x;
 }
 
-/* ---------- Feiertage NRW ---------- */
-function easterSunday(y){
-  const f=Math.floor;
-  const G=y%19,C=f(y/100),
-    H=(C-f(C/4)-f((8*C+13)/25)+19*G+15)%30,
-    I=H-f(H/28)*(1-f(29/(H+1))*f((21-G)/11)),
-    J=(y+f(y/4)+I+2-C+f(C/4))%7,
-    L=I-J;
-  return new Date(y,2,28+L);
-}
-
-function getNRWHolidays(year){
-  const e=easterSunday(year);
-  return [
-    new Date(year,0,1),
-    new Date(year,4,1),
-    new Date(year,9,3),
-    new Date(year,11,25),
-    new Date(year,11,26),
-    addDays(e,-2),
-    addDays(e,1),
-    addDays(e,39),
-    addDays(e,50),
-    addDays(e,60)
-  ].map(d=>d.toISOString().slice(0,10));
-}
-
-function isHoliday(date){
-  return getNRWHolidays(date.getFullYear())
-    .includes(date.toISOString().slice(0,10));
-}
-
-/* ---------- Zyklusberechnung ---------- */
-function calculateAllCycles(start, schema){
+/* ===== Cycle Calculation ===== */
+function calculateCycles(start,schema){
   const all=[];
   for(let c=0;c<schema.anzahl_zyklen;c++){
-    const cycleStart=addDays(start,c*schema.zyklus_tage);
-    const cycleEnd=addDays(cycleStart,schema.zyklus_tage-1);
+    const cs=addDays(start,c*schema.zyklus_tage);
+    const ce=addDays(cs,schema.zyklus_tage-1);
 
-    schema.events.forEach(ev=>{
+    const days=[...Array(schema.zyklus_tage)].map((_,i)=>({
+      day:i+1,
+      date:addDays(cs,i),
+      events:[]
+    }));
+
+    schema.events.forEach(e=>{
       let d;
-      if(ev.day) d=addDays(cycleStart,ev.day-1);
-      if(ev.workdays_before_cycle_end)
-        d=subtractWorkdays(cycleEnd,ev.workdays_before_cycle_end);
-
-      all.push({
-        cycle:c+1,
-        date:d,
-        label:ev.label,
-        holiday:isHoliday(d)
-      });
+      if(e.day) d=e.day;
+      if(e.workdays_before_cycle_end){
+        const date=subtractWorkdays(ce,e.workdays_before_cycle_end);
+        d=Math.round((date-cs)/(1000*60*60*24))+1;
+      }
+      days[d-1].events.push(e);
     });
+
+    all.push({cycle:c+1, days});
   }
   return all;
 }
 
-/* ---------- UI ---------- */
+/* ===== UI ===== */
 document.getElementById("therapyForm").addEventListener("submit",e=>{
   e.preventDefault();
 
-  const geburt = document.getElementById("geburt").value;
-  if (!isValidBirthdate(geburt)) {
-    alert("Bitte ein gültiges Geburtsdatum im Format TT.MM.JJJJ eingeben.");
-    document.getElementById("geburt").focus();
-    return;
-  }
-
-  const vor = document.getElementById("vorname").value;
-  const nach = document.getElementById("nachname").value;
-  const start = new Date(document.getElementById("startdatum").value);
-  const schema = JSON.parse(
+  const start=new Date(document.getElementById("startdatum").value);
+  const schema=JSON.parse(
     document.getElementById("schema-EC-q2w").textContent
   );
 
-  const rows = calculateAllCycles(start, schema);
+  const cycles=calculateCycles(start,schema);
 
-  document.getElementById("patient").innerHTML = `
-    <strong>Patient:</strong> ${vor} ${nach}<br>
-    <strong>Geburtsdatum:</strong> ${geburt || "—"}
-  `;
+  /* ---- Graphic: only first cycle ---- */
+  const c=cycles[0];
+  let gHTML=`<div class="cycle-title">Zyklus 1</div><div class="grid">`;
 
-  let html="<table><tr><th>Zyklus</th><th>Datum</th><th>Maßnahme</th></tr>";
-  rows.forEach(r=>{
-    html+=`
-      <tr>
-        <td>${r.cycle}</td>
-        <td class="${r.holiday?'holiday':''}">
-          ${fmt(r.date)} ${r.holiday?'⚠️ Feiertag':''}
-        </td>
-        <td>${r.label}</td>
-      </tr>`;
+  c.days.forEach(d=>{
+    gHTML+=`<div class="day">`;
+
+    if(d.day===1 || d.day===8){
+      gHTML+=`<div class="day-label">d${d.day}</div>`;
+    }
+
+    d.events.forEach(ev=>{
+      if(ev.type==="therapy")
+        gHTML+=`<div class="therapy">${ev.label}</div>`;
+      if(ev.type==="injection")
+        gHTML+=`<div class="icon">💉</div>`;
+      if(ev.type==="lab")
+        gHTML+=`<div class="icon">🩸</div>`;
+    });
+
+    gHTML+=`</div>`;
   });
-  html+="</table>";
 
-  document.getElementById("title").textContent =
-    "Therapieplan – alle Zyklen";
-  document.getElementById("table").innerHTML = html;
+  gHTML+=`</div>`;
+  document.getElementById("graphic").innerHTML=gHTML;
+
+  /* ---- Table: all cycles ---- */
+  let table=`
+    <table>
+      <tr>
+        <th>Zyklus</th>
+        <th>Datum</th>
+        <th>Tag</th>
+        <th>Maßnahme</th>
+      </tr>`;
+
+  cycles.forEach(c=>{
+    c.days.forEach(d=>{
+      d.events.forEach(ev=>{
+        table+=`
+          <tr>
+            <td>${c.cycle}</td>
+            <td>${fmt(d.date)}</td>
+            <td>d${d.day}</td>
+            <td>${ev.label}</td>
+          </tr>`;
+      });
+    });
+  });
+
+  table+=`</table>`;
+  document.getElementById("table").innerHTML=table;
+
   document.getElementById("plan").style.display="block";
 });
 </script>
