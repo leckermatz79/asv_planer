@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chemotherapie – Therapieplan</title>
+
+  <style>
+    :root {
+      --primary: #dc2626;
+      --bg: #f3f4f6;
+      --card: #ffffff;
+      --text: #1f2937;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    form, .plan {
+      background: var(--card);
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      margin-bottom: 2rem;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    input, select, button {
+      padding: 0.6rem;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 0.95rem;
+      width: 100%;
+    }
+
+    button {
+      grid-column: 1 / -1;
+      background: var(--primary);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .plan {
+      display: none;
+      border-left: 8px solid var(--primary);
+    }
+
+    ul {
+      padding-left: 1.2rem;
+    }
+
+    @media print {
+      form, button {
+        display: none;
+      }
+      body {
+        background: white;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<div class="container">
+
+  <h1>Therapieplan erstellen</h1>
+
+  <form id="therapyForm">
+    <div>
+      <label>Vorname</label>
+      <input required id="vorname">
+    </div>
+
+    <div>
+      <label>Nachname</label>
+      <input required id="nachname">
+    </div>
+
+    <div>
+      <label>Geburtsdatum (optional)</label>
+      <input id="geburt" placeholder="TT.MM.JJJJ">
+    </div>
+
+    <div>
+      <label>Schema</label>
+      <select id="schema">
+        <option value="EC-q2w">EC q2w</option>
+      </select>
+    </div>
+
+    <div>
+      <label>Startdatum Zyklus 1</label>
+      <input type="date" id="startdatum" required>
+    </div>
+
+    <button type="submit">Therapieplan anzeigen</button>
+  </form>
+
+  <div class="plan" id="plan">
+    <h2 id="planTitle"></h2>
+    <div id="planDetails"></div>
+    <button onclick="window.print()">Drucken / PDF</button>
+  </div>
+</div>
+
+<!-- ===================== -->
+<!-- Schema-Definition     -->
+<!-- ===================== -->
+
+<script type="application/json" id="schema-EC-q2w">
+{
+  "name": "EC q2w",
+  "farbe": "#dc2626",
+  "zyklus_tage": 14,
+  "anzahl_zyklen": 4,
+  "events": [
+    { "label": "Chemotherapie EC", "day": 1 },
+    { "label": "Pegfilgrastim", "day": 2 },
+    { "label": "Laborkontrolle", "day": 8 },
+    { "label": "Laborkontrolle prä-Zyklus", "workdays_before_cycle_end": 2 }
+  ]
+}
+</script>
+
+<script>
+  function isValidBirthdate(v) {
+    if (!v) return true;
+    return /^(\d{2})\.(\d{2})\.(\d{4})$/.test(v);
+  }
+
+  function addDays(d, n) {
+    const x = new Date(d);
+    x.setDate(x.getDate() + n);
+    return x;
+  }
+
+  function subtractWorkdays(d, n) {
+    const x = new Date(d);
+    while (n > 0) {
+      x.setDate(x.getDate() - 1);
+      const wd = x.getDay();
+      if (wd !== 0 && wd !== 6) n--;
+    }
+    return x;
+  }
+
+  function fmt(d) {
+    return d.toLocaleDateString("de-DE");
+  }
+
+  function calculateCycle(start, schema) {
+    const startDate = new Date(start);
+    const endDate = addDays(startDate, schema.zyklus_tage - 1);
+
+    return schema.events.map(e => {
+      let date;
+      if (e.day) {
+        date = addDays(startDate, e.day - 1);
+      }
+      if (e.workdays_before_cycle_end) {
+        date = subtractWorkdays(endDate, e.workdays_before_cycle_end);
+      }
+      return { label: e.label, date };
+    });
+  }
+
+  document.getElementById("therapyForm").addEventListener("submit", e => {
+    e.preventDefault();
+
+    const geburt = document.getElementById("geburt").value;
+    if (!isValidBirthdate(geburt)) {
+      alert("Geburtsdatum bitte als TT.MM.JJJJ");
+      return;
+    }
+
+    const vor = document.getElementById("vorname").value;
+    const nach = document.getElementById("nachname").value;
+    const start = document.getElementById("startdatum").value;
+
+    const schema = JSON.parse(
+      document.getElementById("schema-EC-q2w").textContent
+    );
+
+    const events = calculateCycle(start, schema);
+
+    let html = `<p><strong>Patient:</strong> ${vor} ${nach}</p>`;
+    html += `<ul>`;
+    events.forEach(ev => {
+      html += `<li>${fmt(ev.date)} – ${ev.label}</li>`;
+    });
+    html += `</ul>`;
+
+    document.getElementById("planTitle").textContent =
+      `${schema.name} – Zyklus 1`;
+    document.getElementById("planDetails").innerHTML = html;
+    document.getElementById("plan").style.display = "block";
+  });
+</script>
+
+</body>
+</html>
