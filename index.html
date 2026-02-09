@@ -62,10 +62,13 @@
   .day {
     border: 1px solid #e5e7eb;
     border-radius: 6px;
-    min-height: 80px;
+    min-height: 90px;
     background: #f9fafb;
     position: relative;
     padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .day.weekend {
@@ -84,29 +87,48 @@
   /* ===== EC Bars ===== */
   .therapy-bars {
     display: flex;
-    gap: 4px;
+    gap: 8px;
     height: 100%;
+    width: 60%;
     align-items: stretch;
-    padding: 4px 2px;
+    justify-content: center;
+    padding: 6px 0;
   }
 
   .bar {
-    width: 8px;
-    border-radius: 4px;
+    flex: 1;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: white;
   }
 
   .bar.e {
-    background: #2563eb;
-  }
-
-  .bar.c {
     background: #dc2626;
   }
 
-  .icon {
-    font-size: 1.2rem;
+  .bar.c {
+    background: #2563eb;
+  }
+
+  /* ===== Icons ===== */
+  .icon-block {
     text-align: center;
-    margin-top: 26px;
+  }
+
+  .icon {
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .icon-label {
+    font-size: 0.7rem;
+    margin-top: 4px;
+    color: #374151;
+    font-weight: 600;
   }
 
   /* ===== Table ===== */
@@ -238,19 +260,31 @@ document.getElementById("therapyForm").addEventListener("submit",e=>{
   /* Grid */
   let grid=`<div class="grid">`;
   c.days.forEach(d=>{
-    const weekend = d.date.getDay()===0 || d.date.getDay()===6;
+    const weekend=d.date.getDay()===0||d.date.getDay()===6;
     grid+=`<div class="day ${weekend?'weekend':''}">`;
 
     d.events.forEach(ev=>{
       if(ev.type==="therapy"){
         grid+=`
           <div class="therapy-bars">
-            <div class="bar e"></div>
-            <div class="bar c"></div>
+            <div class="bar e">E</div>
+            <div class="bar c">C</div>
           </div>`;
       }
-      if(ev.type==="injection") grid+=`<div class="icon">💉</div>`;
-      if(ev.type==="lab") grid+=`<div class="icon">🩸</div>`;
+      if(ev.type==="injection"){
+        grid+=`
+          <div class="icon-block">
+            <div class="icon">💉</div>
+            <div class="icon-label">${ev.label}</div>
+          </div>`;
+      }
+      if(ev.type==="lab"){
+        grid+=`
+          <div class="icon-block">
+            <div class="icon">🩸</div>
+            <div class="icon-label">${ev.label}</div>
+          </div>`;
+      }
     });
 
     if(d.day===1 || d.day===8){
