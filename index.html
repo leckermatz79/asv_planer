@@ -20,50 +20,48 @@
     font-weight:600; cursor:pointer;
   }
 
-  /* ===== Graphic Schedule ===== */
-  .cycle-title { font-weight:700; margin-bottom:0.5rem; }
+  .warning { color:#dc2626; font-weight:600; }
 
-  .weekday-header {
-    display:grid; grid-template-columns:repeat(7, 1fr);
-    margin-bottom:6px; text-align:center;
-    font-size:0.75rem; font-weight:600; color:#374151;
+  /* ===== Graphic ===== */
+  .weekday-header{
+    display:grid; grid-template-columns:repeat(7,1fr);
+    text-align:center; font-weight:600; font-size:0.75rem;
+    margin-bottom:6px; color:#374151;
   }
-
-  .grid { display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; }
-
-  .day {
-    border:1px solid #e5e7eb; border-radius:6px; min-height:95px;
-    background:#f9fafb; position:relative; padding:6px;
-    display:flex; align-items:stretch; justify-content:center;
+  .grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .day{
+    border:1px solid #e5e7eb; border-radius:6px;
+    min-height:95px; padding:6px;
+    background:#f9fafb; position:relative;
+    display:flex; justify-content:center; align-items:stretch;
   }
-  .day.weekend { background:#e5e7eb; }
-
-  .day-label {
+  .day.weekend{ background:#e5e7eb; }
+  .day.holiday{ outline:2px solid #dc2626; outline-offset:-2px; }
+  .day-label{
     position:absolute; bottom:4px; right:6px;
     font-size:0.65rem; font-weight:600; color:#6b7280;
   }
 
-  /* ===== EC Bars ===== */
-  .therapy-bars {
-    display:flex; gap:8px; height:100%; width:65%;
-    align-items:stretch; justify-content:center; padding:6px 0;
+  /* EC bars */
+  .therapy-bars{
+    display:flex; gap:8px; width:65%; height:100%;
   }
-  .bar {
-    flex:1; border-radius:6px; display:flex;
-    align-items:center; justify-content:center;
-    font-size:0.75rem; font-weight:700; color:#fff;
+  .bar{
+    flex:1; border-radius:6px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; color:#fff; font-size:0.75rem;
   }
-  .bar.e { background:#dc2626; }
-  .bar.c { background:#2563eb; }
+  .bar.e{ background:#dc2626; }
+  .bar.c{ background:#2563eb; }
 
-  /* ===== Icons bottom-aligned ===== */
-  .icon-block { margin-top:auto; text-align:center; padding-bottom:6px; }
-  .icon { font-size:2.2rem; line-height:1; }
-  .icon-label { font-size:0.7rem; margin-top:4px; color:#374151; font-weight:600; }
+  /* Icons */
+  .icon-block{ margin-top:auto; text-align:center; padding-bottom:6px; }
+  .icon{ font-size:2.2rem; line-height:1; }
+  .icon-label{ font-size:0.7rem; font-weight:600; color:#374151; margin-top:4px; }
 
   /* ===== Table ===== */
-  table { width:100%; border-collapse:collapse; margin-top:1rem; }
-  th, td { padding:0.5rem; border-bottom:1px solid #e5e7eb; text-align:left; }
+  table{ width:100%; border-collapse:collapse; margin-top:1rem; }
+  th, td{ padding:0.5rem; border-bottom:1px solid #e5e7eb; text-align:left; }
 
   @media print { form, button { display:none; } body { background:#fff; } }
 </style>
@@ -71,155 +69,211 @@
 
 <body>
 <div class="container">
+  <h1>Therapieplan EC q2w</h1>
 
-<h1>Therapieplan EC q2w</h1>
+  <form id="therapyForm">
+    <label>Vorname<input id="vorname" required></label>
+    <label>Nachname<input id="nachname" required></label>
+    <label>Geburtsdatum (optional, TT.MM.JJJJ)
+      <input id="geburt" placeholder="TT.MM.JJJJ">
+    </label>
+    <label>Startdatum Zyklus 1
+      <input type="date" id="startdatum" required>
+    </label>
+    <button type="submit">Plan berechnen</button>
+  </form>
 
-<form id="therapyForm">
-  <label>Vorname<input id="vorname" required></label>
-  <label>Nachname<input id="nachname" required></label>
-  <label>Geburtsdatum (optional)<input id="geburt" placeholder="TT.MM.JJJJ"></label>
-  <label>Startdatum Zyklus 1<input type="date" id="startdatum" required></label>
-  <button>Plan berechnen</button>
-</form>
+  <div class="plan" id="plan" style="display:none">
+    <h2>Grafische Übersicht (1 Zyklus)</h2>
+    <div id="graphic"></div>
 
-<div class="plan" id="plan" style="display:none">
-  <h2>Grafische Übersicht (ein Zyklus)</h2>
-  <div id="graphic"></div>
+    <h2 style="margin-top:2rem">Tabellarische Übersicht (alle Zyklen)</h2>
+    <div id="patient"></div>
+    <div id="table"></div>
 
-  <h2 style="margin-top:2rem">Tabellarische Übersicht (alle Zyklen)</h2>
-  <div id="table"></div>
-
-  <button onclick="window.print()">Drucken / PDF</button>
+    <button onclick="window.print()">Drucken / PDF</button>
+  </div>
 </div>
 
-</div>
-
-<script type="application/json" id="schema-EC-q2w">
+<script type="application/json" id="schema">
 {
-  "name": "EC q2w",
   "zyklus_tage": 14,
   "anzahl_zyklen": 4,
   "events": [
-    { "label": "EC", "type": "therapy", "day": 1 },
-    { "label": "Pegfilgrastim", "type": "injection", "day": 2 },
-    { "label": "Labor", "type": "lab", "day": 8 },
-    { "label": "Labor", "type": "lab", "workdays_before_next_cycle_start": 2 }
+    { "type": "therapy",    "label": "EC",            "day": 1 },
+    { "type": "injection",  "label": "Pegfilgrastim", "day": 2 },
+    { "type": "lab",        "label": "Labor",         "day": 8 },
+    { "type": "lab",        "label": "Labor",         "workdays_before_next_cycle_start": 2 }
   ]
 }
 </script>
 
 <script>
-/* ===== Geburtsdatum (optional, aber valide) ===== */
-function isValidBirthdate(value) {
+/* ===== DOM ===== */
+const formEl     = document.getElementById("therapyForm");
+const vornameEl  = document.getElementById("vorname");
+const nachnameEl = document.getElementById("nachname");
+const geburtEl   = document.getElementById("geburt");
+const startEl    = document.getElementById("startdatum");
+
+const planEl     = document.getElementById("plan");
+const graphicEl  = document.getElementById("graphic");
+const patientEl  = document.getElementById("patient");
+const tableEl    = document.getElementById("table");
+
+const schema = JSON.parse(document.getElementById("schema").textContent);
+
+/* ===== Geburtsdatum ===== */
+function isValidBirthdate(value){
   if (!value) return true;
   const m = value.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
   if (!m) return false;
-  const day = parseInt(m[1],10);
-  const month = parseInt(m[2],10)-1;
-  const year = parseInt(m[3],10);
+
+  const day   = parseInt(m[1], 10);
+  const month = parseInt(m[2], 10) - 1;
+  const year  = parseInt(m[3], 10);
+
   const d = new Date(year, month, day);
-  if (d.getFullYear()!==year || d.getMonth()!==month || d.getDate()!==day) return false;
+  if (d.getFullYear() !== year || d.getMonth() !== month || d.getDate() !== day) return false;
   if (d > new Date()) return false;
   return true;
 }
 
 /* ===== Helpers ===== */
+const weekdays = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+const MS_DAY = 24*60*60*1000;
+
 const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return x; };
 const fmt = d => d.toLocaleDateString("de-DE");
-const weekdays = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+
+/* ===== NRW Feiertage ===== */
+function easterSunday(y){
+  const f=Math.floor;
+  const G=y%19, C=f(y/100);
+  const H=(C-f(C/4)-f((8*C+13)/25)+19*G+15)%30;
+  const I=H-f(H/28)*(1-f(29/(H+1))*f((21-G)/11));
+  const J=(y+f(y/4)+I+2-C+f(C/4))%7;
+  const L=I-J;
+  return new Date(y,2,28+L); // March = 2
+}
+
+function getNRWHolidays(year){
+  const e = easterSunday(year);
+  // NRW: Neujahr, 1. Mai, 3. Okt, 25/26. Dez + Karfreitag, Ostermontag,
+  // Christi Himmelfahrt, Pfingstmontag, Fronleichnam
+  return [
+    new Date(year,0,1),
+    new Date(year,4,1),
+    new Date(year,9,3),
+    new Date(year,11,25),
+    new Date(year,11,26),
+    addDays(e,-2),
+    addDays(e,1),
+    addDays(e,39),
+    addDays(e,50),
+    addDays(e,60)
+  ].map(d => d.toISOString().slice(0,10));
+}
+
+function isNRWHoliday(date){
+  return getNRWHolidays(date.getFullYear()).includes(date.toISOString().slice(0,10));
+}
+
+function isWeekend(date){
+  const wd = date.getDay();
+  return wd === 0 || wd === 6;
+}
+
+function isWorkday(date){
+  return !isWeekend(date) && !isNRWHoliday(date);
+}
 
 function subtractWorkdays(date, n){
   const x = new Date(date);
-  while(n>0){
-    x.setDate(x.getDate()-1);
-    const w = x.getDay();
-    if(w!==0 && w!==6) n--;
+  while(n > 0){
+    x.setDate(x.getDate() - 1);
+    if (isWorkday(x)) n--;
   }
   return x;
 }
 
-/* ===== Cycle Calculation ===== */
-function calculateCycles(start, schema){
-  const all = [];
-  for(let c=0; c<schema.anzahl_zyklen; c++){
-    const cycleStart = addDays(start, c*schema.zyklus_tage);
-    const nextCycleStart = addDays(cycleStart, schema.zyklus_tage); // ✅ wichtig!
-    const cycleEnd = addDays(cycleStart, schema.zyklus_tage-1);
+/* ===== Planung ===== */
+function buildCycles(startDate){
+  const cycles = [];
 
-    const days = [...Array(schema.zyklus_tage)].map((_,i)=>({
+  for (let c = 0; c < schema.anzahl_zyklen; c++){
+    const cycleStart = addDays(startDate, c * schema.zyklus_tage);
+    const nextCycleStart = addDays(cycleStart, schema.zyklus_tage);
+
+    const days = Array.from({length: schema.zyklus_tage}, (_,i)=>({
       day: i+1,
       date: addDays(cycleStart, i),
-      events: []
+      events: [],
+      warnings: []
     }));
 
-    schema.events.forEach(ev=>{
+    // Events auf Tage mappen
+    for (const ev of schema.events){
       let dayIndex = null;
 
-      if (ev.day) {
+      if (typeof ev.day === "number") {
         dayIndex = ev.day; // 1..zyklus_tage
       }
 
-      if (ev.workdays_before_next_cycle_start) {
-        const targetDate = subtractWorkdays(nextCycleStart, ev.workdays_before_next_cycle_start);
-        dayIndex = Math.round((targetDate - cycleStart) / (1000*60*60*24)) + 1;
+      if (typeof ev.workdays_before_next_cycle_start === "number") {
+        const target = subtractWorkdays(nextCycleStart, ev.workdays_before_next_cycle_start);
+        dayIndex = Math.round((target - cycleStart) / MS_DAY) + 1;
       }
 
-      if (dayIndex && dayIndex >= 1 && dayIndex <= schema.zyklus_tage) {
+      if (dayIndex && dayIndex >= 1 && dayIndex <= schema.zyklus_tage){
         days[dayIndex-1].events.push(ev);
       }
-    });
+    }
 
-    all.push({ cycle: c+1, cycleStart, cycleEnd, nextCycleStart, days });
+    // Warnungen pro Tag (Feiertag / Wochenende)
+    for (const d of days){
+      if (isNRWHoliday(d.date)) d.warnings.push("⚠️ Feiertag");
+      if (isWeekend(d.date)) d.warnings.push("⚠️ Wochenende");
+    }
+
+    cycles.push({ index: c+1, cycleStart, nextCycleStart, days });
   }
-  return all;
+
+  return cycles;
 }
 
-/* ===== UI ===== */
-document.getElementById("therapyForm").addEventListener("submit", e => {
-  e.preventDefault();
-
-  const geburt = document.getElementById("geburt").value.trim();
-  if (!isValidBirthdate(geburt)) {
-    alert("Bitte ein gültiges Geburtsdatum im Format TT.MM.JJJJ eingeben.");
-    document.getElementById("geburt").focus();
-    return;
-  }
-
-  const start = new Date(document.getElementById("startdatum").value);
-  const schema = JSON.parse(document.getElementById("schema-EC-q2w").textContent);
-
-  const cycles = calculateCycles(start, schema);
-  const c1 = cycles[0];
-
-  /* Header */
+/* ===== Rendering ===== */
+function renderGraphicOneCycle(cycle){
+  // Header (nur Wochentage)
   let header = `<div class="weekday-header">`;
-  c1.days.slice(0,7).forEach(d => {
+  cycle.days.slice(0,7).forEach(d=>{
     header += `<div>${weekdays[d.date.getDay()]}</div>`;
   });
   header += `</div>`;
 
-  /* Grid */
+  // Grid (14 Tage = 2 Wochen à 7)
   let grid = `<div class="grid">`;
-  c1.days.forEach(d => {
-    const weekend = d.date.getDay()===0 || d.date.getDay()===6;
-    grid += `<div class="day ${weekend ? 'weekend' : ''}">`;
+  cycle.days.forEach(d=>{
+    const weekendCls = isWeekend(d.date) ? "weekend" : "";
+    const holidayCls = isNRWHoliday(d.date) ? "holiday" : "";
+    grid += `<div class="day ${weekendCls} ${holidayCls}">`;
 
-    d.events.forEach(ev => {
-      if (ev.type==="therapy") {
+    // Events (Therapie / Injection / Lab)
+    d.events.forEach(ev=>{
+      if (ev.type === "therapy"){
+        // EC als E/C Balken
         grid += `
-          <div class="therapy-bars">
+          <div class="therapy-bars" aria-label="${ev.label}">
             <div class="bar e">E</div>
             <div class="bar c">C</div>
           </div>`;
-      }
-      if (ev.type==="injection") {
+      } else if (ev.type === "injection"){
         grid += `
           <div class="icon-block">
             <div class="icon">💉</div>
             <div class="icon-label">${ev.label}</div>
           </div>`;
-      }
-      if (ev.type==="lab") {
+      } else if (ev.type === "lab"){
         grid += `
           <div class="icon-block">
             <div class="icon">🩸</div>
@@ -228,7 +282,8 @@ document.getElementById("therapyForm").addEventListener("submit", e => {
       }
     });
 
-    if (d.day===1 || d.day===8) {
+    // d1/d8 label unten rechts
+    if (d.day === 1 || d.day === 8){
       grid += `<div class="day-label">d${d.day}</div>`;
     }
 
@@ -236,38 +291,85 @@ document.getElementById("therapyForm").addEventListener("submit", e => {
   });
   grid += `</div>`;
 
-  document.getElementById("graphic").innerHTML =
-    `<div class="cycle-title">Zyklus 1</div>${header}${grid}`;
+  graphicEl.innerHTML = header + grid;
+}
 
-  /* Table (alle Zyklen, mit Datum) */
-  let table = `
+function renderTableAllCycles(cycles){
+  let html = `
     <table>
       <tr>
         <th>Zyklus</th>
         <th>Datum</th>
         <th>Tag</th>
         <th>Maßnahme</th>
+        <th>Hinweis</th>
       </tr>`;
 
-  cycles.forEach(cyc => {
-    cyc.days.forEach(d => {
-      d.events.forEach(ev => {
-        table += `
+  for (const cyc of cycles){
+    for (const d of cyc.days){
+      for (const ev of d.events){
+        const hints = [];
+
+        // Start der Therapie (d1) muss Werktag sein → sonst hätten wir vorher schon abgebrochen.
+        // Trotzdem: Markierungen für Wochenende/Feiertag:
+        if (isNRWHoliday(d.date)) hints.push("⚠️ Feiertag");
+        if (isWeekend(d.date)) hints.push("⚠️ Wochenende");
+
+        html += `
           <tr>
-            <td>${cyc.cycle}</td>
+            <td>${cyc.index}</td>
             <td>${fmt(d.date)}</td>
             <td>d${d.day}</td>
             <td>${ev.label}</td>
+            <td class="warning">${hints.join(", ")}</td>
           </tr>`;
-      });
-    });
-  });
+      }
+    }
+  }
 
-  table += `</table>`;
-  document.getElementById("table").innerHTML = table;
+  html += `</table>`;
+  tableEl.innerHTML = html;
+}
 
-  document.getElementById("plan").style.display = "block";
+/* ===== Submit ===== */
+formEl.addEventListener("submit", (e)=>{
+  e.preventDefault();
+
+  const geburt = geburtEl.value.trim();
+  if (!isValidBirthdate(geburt)){
+    alert("Bitte ein gültiges Geburtsdatum im Format TT.MM.JJJJ eingeben.");
+    geburtEl.focus();
+    return;
+  }
+
+  const startDate = new Date(startEl.value);
+
+  // Sicherstellen: Start darf nicht auf Wochenende/Feiertag liegen
+  if (!isWorkday(startDate)){
+    const reason = isNRWHoliday(startDate) ? "Feiertag (NRW)" : "Wochenende";
+    alert(`Therapiestart (Zyklus 1, d1) darf nicht auf ${reason} fallen. Bitte Startdatum anpassen.`);
+    startEl.focus();
+    return;
+  }
+
+  const cycles = buildCycles(startDate);
+
+  // Patientenkopf
+  patientEl.innerHTML = `
+    <p>
+      <strong>Patient:</strong> ${vornameEl.value} ${nachnameEl.value}<br>
+      <strong>Geburtsdatum:</strong> ${geburt || "—"}
+    </p>`;
+
+  // Grafik: nur Zyklus 1
+  renderGraphicOneCycle(cycles[0]);
+
+  // Tabelle: alle Zyklen
+  renderTableAllCycles(cycles);
+
+  planEl.style.display = "block";
 });
 </script>
+
 </body>
 </html>
