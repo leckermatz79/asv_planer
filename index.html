@@ -5,148 +5,67 @@
 <title>Therapieplan – EC q2w</title>
 
 <style>
-  body {
-    font-family: system-ui, sans-serif;
-    background: #f3f4f6;
-    padding: 2rem;
-  }
-  .container { max-width: 1100px; margin: auto; }
+  body { font-family: system-ui, sans-serif; background:#f3f4f6; padding:2rem; }
+  .container { max-width:1100px; margin:auto; }
 
   form, .plan {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    margin-bottom: 2rem;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    background:#fff; padding:1.5rem; border-radius:12px; margin-bottom:2rem;
+    box-shadow:0 10px 25px rgba(0,0,0,0.08);
   }
 
-  label { font-weight: 600; font-size: 0.85rem; display:block; }
-  input, button {
-    width: 100%; padding: 0.6rem; margin-top: 0.25rem;
-  }
+  label { font-weight:600; font-size:0.85rem; display:block; }
+  input, button { width:100%; padding:0.6rem; margin-top:0.25rem; }
   button {
-    background: #dc2626; color: white;
-    border: none; border-radius: 8px;
-    font-weight: 600; cursor: pointer;
+    background:#dc2626; color:#fff; border:none; border-radius:8px;
+    font-weight:600; cursor:pointer;
   }
 
   /* ===== Graphic Schedule ===== */
-  .cycle-title {
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-  }
+  .cycle-title { font-weight:700; margin-bottom:0.5rem; }
 
   .weekday-header {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    margin-bottom: 6px;
-    text-align: center;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #374151;
+    display:grid; grid-template-columns:repeat(7, 1fr);
+    margin-bottom:6px; text-align:center;
+    font-size:0.75rem; font-weight:600; color:#374151;
   }
 
-  .weekday-header div span {
-    display: block;
-    font-weight: 400;
-    font-size: 0.7rem;
-    color: #6b7280;
-  }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 6px;
-  }
+  .grid { display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; }
 
   .day {
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    min-height: 90px;
-    background: #f9fafb;
-    position: relative;
-    padding: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border:1px solid #e5e7eb; border-radius:6px; min-height:95px;
+    background:#f9fafb; position:relative; padding:6px;
+    display:flex; align-items:stretch; justify-content:center;
   }
-
-  .day.weekend {
-    background: #e5e7eb;
-  }
+  .day.weekend { background:#e5e7eb; }
 
   .day-label {
-    position: absolute;
-    bottom: 4px;
-    right: 6px;
-    font-size: 0.65rem;
-    font-weight: 600;
-    color: #6b7280;
+    position:absolute; bottom:4px; right:6px;
+    font-size:0.65rem; font-weight:600; color:#6b7280;
   }
 
   /* ===== EC Bars ===== */
   .therapy-bars {
-    display: flex;
-    gap: 8px;
-    height: 100%;
-    width: 60%;
-    align-items: stretch;
-    justify-content: center;
-    padding: 6px 0;
+    display:flex; gap:8px; height:100%; width:65%;
+    align-items:stretch; justify-content:center; padding:6px 0;
   }
-
   .bar {
-    flex: 1;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: white;
+    flex:1; border-radius:6px; display:flex;
+    align-items:center; justify-content:center;
+    font-size:0.75rem; font-weight:700; color:#fff;
   }
+  .bar.e { background:#dc2626; }
+  .bar.c { background:#2563eb; }
 
-  .bar.e {
-    background: #dc2626;
-  }
-
-  .bar.c {
-    background: #2563eb;
-  }
-
-  /* ===== Icons ===== */
-  .icon-block {
-    text-align: center;
-  }
-
-  .icon {
-    font-size: 2rem;
-    line-height: 1;
-  }
-
-  .icon-label {
-    font-size: 0.7rem;
-    margin-top: 4px;
-    color: #374151;
-    font-weight: 600;
-  }
+  /* ===== Icons bottom-aligned ===== */
+  .icon-block { margin-top:auto; text-align:center; padding-bottom:6px; }
+  .icon { font-size:2.2rem; line-height:1; }
+  .icon-label { font-size:0.7rem; margin-top:4px; color:#374151; font-weight:600; }
 
   /* ===== Table ===== */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 1rem;
-  }
-  th, td {
-    padding: 0.5rem;
-    border-bottom: 1px solid #e5e7eb;
-    text-align: left;
-  }
+  table { width:100%; border-collapse:collapse; margin-top:1rem; }
+  th, td { padding:0.5rem; border-bottom:1px solid #e5e7eb; text-align:left; }
 
-  @media print {
-    form, button { display: none; }
-    body { background: white; }
-  }
+  @media print { form, button { display:none; } body { background:#fff; } }
 </style>
 </head>
 
@@ -164,7 +83,6 @@
 </form>
 
 <div class="plan" id="plan" style="display:none">
-
   <h2>Grafische Übersicht (ein Zyklus)</h2>
   <div id="graphic"></div>
 
@@ -185,101 +103,124 @@
     { "label": "EC", "type": "therapy", "day": 1 },
     { "label": "Pegfilgrastim", "type": "injection", "day": 2 },
     { "label": "Labor", "type": "lab", "day": 8 },
-    { "label": "Labor", "type": "lab", "workdays_before_cycle_end": 2 }
+    { "label": "Labor", "type": "lab", "workdays_before_next_cycle_start": 2 }
   ]
 }
 </script>
 
 <script>
-/* ===== Helpers ===== */
-const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;}
-const fmt=d=>d.toLocaleDateString("de-DE");
-const weekdays=["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+/* ===== Geburtsdatum (optional, aber valide) ===== */
+function isValidBirthdate(value) {
+  if (!value) return true;
+  const m = value.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!m) return false;
+  const day = parseInt(m[1],10);
+  const month = parseInt(m[2],10)-1;
+  const year = parseInt(m[3],10);
+  const d = new Date(year, month, day);
+  if (d.getFullYear()!==year || d.getMonth()!==month || d.getDate()!==day) return false;
+  if (d > new Date()) return false;
+  return true;
+}
 
-function subtractWorkdays(d,n){
-  const x=new Date(d);
+/* ===== Helpers ===== */
+const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return x; };
+const fmt = d => d.toLocaleDateString("de-DE");
+const weekdays = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+
+function subtractWorkdays(date, n){
+  const x = new Date(date);
   while(n>0){
     x.setDate(x.getDate()-1);
-    const w=x.getDay();
+    const w = x.getDay();
     if(w!==0 && w!==6) n--;
   }
   return x;
 }
 
 /* ===== Cycle Calculation ===== */
-function calculateCycles(start,schema){
-  const all=[];
-  for(let c=0;c<schema.anzahl_zyklen;c++){
-    const cs=addDays(start,c*schema.zyklus_tage);
-    const ce=addDays(cs,schema.zyklus_tage-1);
+function calculateCycles(start, schema){
+  const all = [];
+  for(let c=0; c<schema.anzahl_zyklen; c++){
+    const cycleStart = addDays(start, c*schema.zyklus_tage);
+    const nextCycleStart = addDays(cycleStart, schema.zyklus_tage); // ✅ wichtig!
+    const cycleEnd = addDays(cycleStart, schema.zyklus_tage-1);
 
-    const days=[...Array(schema.zyklus_tage)].map((_,i)=>({
-      day:i+1,
-      date:addDays(cs,i),
-      events:[]
+    const days = [...Array(schema.zyklus_tage)].map((_,i)=>({
+      day: i+1,
+      date: addDays(cycleStart, i),
+      events: []
     }));
 
-    schema.events.forEach(e=>{
-      let d;
-      if(e.day) d=e.day;
-      if(e.workdays_before_cycle_end){
-        const date=subtractWorkdays(ce,e.workdays_before_cycle_end);
-        d=Math.round((date-cs)/(1000*60*60*24))+1;
+    schema.events.forEach(ev=>{
+      let dayIndex = null;
+
+      if (ev.day) {
+        dayIndex = ev.day; // 1..zyklus_tage
       }
-      days[d-1].events.push(e);
+
+      if (ev.workdays_before_next_cycle_start) {
+        const targetDate = subtractWorkdays(nextCycleStart, ev.workdays_before_next_cycle_start);
+        dayIndex = Math.round((targetDate - cycleStart) / (1000*60*60*24)) + 1;
+      }
+
+      if (dayIndex && dayIndex >= 1 && dayIndex <= schema.zyklus_tage) {
+        days[dayIndex-1].events.push(ev);
+      }
     });
 
-    all.push({cycle:c+1, days});
+    all.push({ cycle: c+1, cycleStart, cycleEnd, nextCycleStart, days });
   }
   return all;
 }
 
 /* ===== UI ===== */
-document.getElementById("therapyForm").addEventListener("submit",e=>{
+document.getElementById("therapyForm").addEventListener("submit", e => {
   e.preventDefault();
 
-  const start=new Date(document.getElementById("startdatum").value);
-  const schema=JSON.parse(
-    document.getElementById("schema-EC-q2w").textContent
-  );
+  const geburt = document.getElementById("geburt").value.trim();
+  if (!isValidBirthdate(geburt)) {
+    alert("Bitte ein gültiges Geburtsdatum im Format TT.MM.JJJJ eingeben.");
+    document.getElementById("geburt").focus();
+    return;
+  }
 
-  const cycles=calculateCycles(start,schema);
-  const c=cycles[0];
+  const start = new Date(document.getElementById("startdatum").value);
+  const schema = JSON.parse(document.getElementById("schema-EC-q2w").textContent);
+
+  const cycles = calculateCycles(start, schema);
+  const c1 = cycles[0];
 
   /* Header */
-  let header=`<div class="weekday-header">`;
-  c.days.slice(0,7).forEach(d=>{
-    header+=`
-      <div>
-        ${weekdays[d.date.getDay()]}
-        <span>${fmt(d.date)}</span>
-      </div>`;
+  let header = `<div class="weekday-header">`;
+  c1.days.slice(0,7).forEach(d => {
+    header += `<div>${weekdays[d.date.getDay()]}</div>`;
   });
-  header+=`</div>`;
+  header += `</div>`;
 
   /* Grid */
-  let grid=`<div class="grid">`;
-  c.days.forEach(d=>{
-    const weekend=d.date.getDay()===0||d.date.getDay()===6;
-    grid+=`<div class="day ${weekend?'weekend':''}">`;
+  let grid = `<div class="grid">`;
+  c1.days.forEach(d => {
+    const weekend = d.date.getDay()===0 || d.date.getDay()===6;
+    grid += `<div class="day ${weekend ? 'weekend' : ''}">`;
 
-    d.events.forEach(ev=>{
-      if(ev.type==="therapy"){
-        grid+=`
+    d.events.forEach(ev => {
+      if (ev.type==="therapy") {
+        grid += `
           <div class="therapy-bars">
             <div class="bar e">E</div>
             <div class="bar c">C</div>
           </div>`;
       }
-      if(ev.type==="injection"){
-        grid+=`
+      if (ev.type==="injection") {
+        grid += `
           <div class="icon-block">
             <div class="icon">💉</div>
             <div class="icon-label">${ev.label}</div>
           </div>`;
       }
-      if(ev.type==="lab"){
-        grid+=`
+      if (ev.type==="lab") {
+        grid += `
           <div class="icon-block">
             <div class="icon">🩸</div>
             <div class="icon-label">${ev.label}</div>
@@ -287,19 +228,19 @@ document.getElementById("therapyForm").addEventListener("submit",e=>{
       }
     });
 
-    if(d.day===1 || d.day===8){
-      grid+=`<div class="day-label">d${d.day}</div>`;
+    if (d.day===1 || d.day===8) {
+      grid += `<div class="day-label">d${d.day}</div>`;
     }
 
-    grid+=`</div>`;
+    grid += `</div>`;
   });
-  grid+=`</div>`;
+  grid += `</div>`;
 
   document.getElementById("graphic").innerHTML =
     `<div class="cycle-title">Zyklus 1</div>${header}${grid}`;
 
-  /* Table */
-  let table=`
+  /* Table (alle Zyklen, mit Datum) */
+  let table = `
     <table>
       <tr>
         <th>Zyklus</th>
@@ -308,12 +249,12 @@ document.getElementById("therapyForm").addEventListener("submit",e=>{
         <th>Maßnahme</th>
       </tr>`;
 
-  cycles.forEach(c=>{
-    c.days.forEach(d=>{
-      d.events.forEach(ev=>{
-        table+=`
+  cycles.forEach(cyc => {
+    cyc.days.forEach(d => {
+      d.events.forEach(ev => {
+        table += `
           <tr>
-            <td>${c.cycle}</td>
+            <td>${cyc.cycle}</td>
             <td>${fmt(d.date)}</td>
             <td>d${d.day}</td>
             <td>${ev.label}</td>
@@ -322,10 +263,10 @@ document.getElementById("therapyForm").addEventListener("submit",e=>{
     });
   });
 
-  table+=`</table>`;
-  document.getElementById("table").innerHTML=table;
+  table += `</table>`;
+  document.getElementById("table").innerHTML = table;
 
-  document.getElementById("plan").style.display="block";
+  document.getElementById("plan").style.display = "block";
 });
 </script>
 </body>
