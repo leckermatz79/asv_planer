@@ -10,7 +10,7 @@
     background: #f3f4f6;
     padding: 2rem;
   }
-  .container { max-width: 1000px; margin: auto; }
+  .container { max-width: 1100px; margin: auto; }
 
   form, .plan {
     background: white;
@@ -39,11 +39,18 @@
   .weekday-header {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    margin-bottom: 4px;
+    margin-bottom: 6px;
+    text-align: center;
     font-size: 0.75rem;
     font-weight: 600;
     color: #374151;
-    text-align: center;
+  }
+
+  .weekday-header div span {
+    display: block;
+    font-weight: 400;
+    font-size: 0.7rem;
+    color: #6b7280;
   }
 
   .grid {
@@ -55,11 +62,14 @@
   .day {
     border: 1px solid #e5e7eb;
     border-radius: 6px;
-    min-height: 70px;
-    padding: 4px;
-    font-size: 0.75rem;
+    min-height: 80px;
     background: #f9fafb;
     position: relative;
+    padding: 6px;
+  }
+
+  .day.weekend {
+    background: #e5e7eb;
   }
 
   .day-label {
@@ -71,21 +81,32 @@
     color: #6b7280;
   }
 
-  .therapy {
-    background: #dc2626;
-    color: white;
+  /* ===== EC Bars ===== */
+  .therapy-bars {
+    display: flex;
+    gap: 4px;
+    height: 100%;
+    align-items: stretch;
+    padding: 4px 2px;
+  }
+
+  .bar {
+    width: 8px;
     border-radius: 4px;
-    padding: 4px;
-    font-weight: 600;
-    font-size: 0.7rem;
-    text-align: center;
-    margin-top: 18px;
+  }
+
+  .bar.e {
+    background: #2563eb;
+  }
+
+  .bar.c {
+    background: #dc2626;
   }
 
   .icon {
     font-size: 1.2rem;
     text-align: center;
-    margin-top: 22px;
+    margin-top: 26px;
   }
 
   /* ===== Table ===== */
@@ -133,7 +154,6 @@
 
 </div>
 
-<!-- ===== Schema ===== -->
 <script type="application/json" id="schema-EC-q2w">
 {
   "name": "EC q2w",
@@ -152,7 +172,7 @@
 /* ===== Helpers ===== */
 const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;}
 const fmt=d=>d.toLocaleDateString("de-DE");
-const weekdays=["So","Mo","Di","Mi","Do","Fr","Sa"];
+const weekdays=["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
 
 function subtractWorkdays(d,n){
   const x=new Date(d);
@@ -202,27 +222,35 @@ document.getElementById("therapyForm").addEventListener("submit",e=>{
   );
 
   const cycles=calculateCycles(start,schema);
-
-  /* ---- Graphic: only first cycle ---- */
   const c=cycles[0];
 
+  /* Header */
   let header=`<div class="weekday-header">`;
   c.days.slice(0,7).forEach(d=>{
-    header+=`<div>${weekdays[d.date.getDay()]}</div>`;
+    header+=`
+      <div>
+        ${weekdays[d.date.getDay()]}
+        <span>${fmt(d.date)}</span>
+      </div>`;
   });
   header+=`</div>`;
 
+  /* Grid */
   let grid=`<div class="grid">`;
   c.days.forEach(d=>{
-    grid+=`<div class="day">`;
+    const weekend = d.date.getDay()===0 || d.date.getDay()===6;
+    grid+=`<div class="day ${weekend?'weekend':''}">`;
 
     d.events.forEach(ev=>{
-      if(ev.type==="therapy")
-        grid+=`<div class="therapy">${ev.label}</div>`;
-      if(ev.type==="injection")
-        grid+=`<div class="icon">💉</div>`;
-      if(ev.type==="lab")
-        grid+=`<div class="icon">🩸</div>`;
+      if(ev.type==="therapy"){
+        grid+=`
+          <div class="therapy-bars">
+            <div class="bar e"></div>
+            <div class="bar c"></div>
+          </div>`;
+      }
+      if(ev.type==="injection") grid+=`<div class="icon">💉</div>`;
+      if(ev.type==="lab") grid+=`<div class="icon">🩸</div>`;
     });
 
     if(d.day===1 || d.day===8){
@@ -236,7 +264,7 @@ document.getElementById("therapyForm").addEventListener("submit",e=>{
   document.getElementById("graphic").innerHTML =
     `<div class="cycle-title">Zyklus 1</div>${header}${grid}`;
 
-  /* ---- Table ---- */
+  /* Table */
   let table=`
     <table>
       <tr>
