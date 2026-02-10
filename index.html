@@ -161,6 +161,57 @@
         "workdays_before_next_cycle_start": 2
       }
     ]
+  },
+
+  "Paclitaxel_Pembro_q3w": {
+    "label": "Paclitaxel wöchentlich, Pembrolizumab alle 3 Wochen",
+    "zyklus_tage": 21,
+    "anzahl_zyklen": 4,
+    "events": [
+      {
+        "type": "therapy",
+        "drug": "Paclitaxel",
+        "short": "P",
+        "color": "#059669",
+        "day": 1
+      },    
+      {
+            "type": "therapy",
+            "drug": "Pembrolizumab",
+            "short": "Pe",
+            "color": "#8b5cf6",
+            "day": 1
+      },      
+      {
+        "type": "therapy",
+        "drug": "Paclitaxel",
+        "short": "P",
+        "color": "#059669",
+        "day": 8
+      },
+      {
+        "type": "therapy",
+        "drug": "Paclitaxel",
+        "short": "P",
+        "color": "#059669",
+        "day": 15
+      },         
+      {
+        "type": "lab",
+        "label": "Labor",
+        "workdays_before_next_cycle_start": 2
+      },
+      {
+        "type": "lab",
+        "label": "Labor",
+        "workdays_before_next_cycle_start": 7
+      },
+      {
+        "type": "lab",
+        "label": "Labor",
+        "workdays_before_next_cycle_start": 12
+      }
+    ]
   }
 }
 </script>
@@ -396,7 +447,11 @@ function renderTableAllCycles(cycles){
             <td>${cyc.index}</td>
             <td>${fmt(d.date)}</td>
             <td>d${d.day}</td>
-            <td>${ev.label}</td>
+            <td>${
+              ev.type === "therapy"
+                ? (ev.drug || ev.short || "Therapie")
+                : ev.label
+            }</td>
             <td class="warning">${hints.join(", ")}</td>
           </tr>`;
       }
