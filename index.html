@@ -42,17 +42,25 @@
     font-size:0.65rem; font-weight:600; color:#6b7280;
   }
 
-  /* EC bars */
+  /* Therapy bars */
   .therapy-bars{
-    display:flex; gap:8px; width:65%; height:100%;
+    display:flex;
+    gap:6px;
+    width:70%;
+    height:100%;
   }
   .bar{
-    flex:1; border-radius:6px;
-    display:flex; align-items:center; justify-content:center;
-    font-weight:700; color:#fff; font-size:0.75rem;
+    flex:1;
+    border-radius:6px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    color:#fff;
+    font-size:0.75rem;
+    writing-mode:horizontal-tb;
+    text-align:center;
   }
-  .bar.e{ background:#dc2626; }
-  .bar.c{ background:#2563eb; }
 
   /* Icons */
   .icon-block{ margin-top:auto; text-align:center; padding-bottom:6px; }
@@ -69,7 +77,7 @@
 
 <body>
 <div class="container">
-  <h1>Therapieplan EC q2w</h1>
+  <h1 id="title">Therapieplan</h1>
 
   <form id="therapyForm">
     <label>Vorname<input id="vorname" required></label>
@@ -77,6 +85,7 @@
     <label>Geburtsdatum (optional, TT.MM.JJJJ)
       <input id="geburt" placeholder="TT.MM.JJJJ">
     </label>
+    <label>Chemotherapie-Schema<select id="schemaSelect" required></select></label>
     <label>Startdatum Zyklus 1
       <input type="date" id="startdatum" required>
     </label>
@@ -95,20 +104,83 @@
   </div>
 </div>
 
-<script type="application/json" id="schema">
+<script type="application/json" id="schemas">
 {
-  "zyklus_tage": 14,
-  "anzahl_zyklen": 4,
-  "events": [
-    { "type": "therapy",    "label": "EC",            "day": 1 },
-    { "type": "injection",  "label": "Pegfilgrastim", "day": 2 },
-    { "type": "lab",        "label": "Labor",         "day": 8 },
-    { "type": "lab",        "label": "Labor",         "workdays_before_next_cycle_start": 2 }
-  ]
+  "EC_q2w": {
+    "label": "EC q2w",
+    "zyklus_tage": 14,
+    "anzahl_zyklen": 4,
+    "events": [
+      {
+        "type": "therapy",
+        "drug": "Epirubicin",
+        "short": "E",
+        "color": "#dc2626",
+        "day": 1
+      },
+      {
+        "type": "therapy",
+        "drug": "Cyclophosphamid",
+        "short": "C",
+        "color": "#2563eb",
+        "day": 1
+      },
+      {
+        "type": "injection",
+        "label": "Pegfilgrastim",
+        "day": 2
+      },
+      {
+        "type": "lab",
+        "label": "Labor",
+        "day": 8
+      },
+      {
+        "type": "lab",
+        "label": "Labor",
+        "workdays_before_next_cycle_start": 2
+      }
+    ]
+  },
+
+  "Paclitaxel_qw": {
+    "label": "Paclitaxel wöchentlich",
+    "zyklus_tage": 7,
+    "anzahl_zyklen": 12,
+    "events": [
+      {
+        "type": "therapy",
+        "drug": "Paclitaxel",
+        "short": "P",
+        "color": "#059669",
+        "day": 1
+      },
+      {
+        "type": "lab",
+        "label": "Labor",
+        "workdays_before_next_cycle_start": 2
+      }
+    ]
+  }
 }
 </script>
 
 <script>
+/* ===== SELECT befüllen ===== */
+const schemas = JSON.parse(
+  document.getElementById("schemas").textContent
+);
+
+const schemaSelect = document.getElementById("schemaSelect");
+
+// Dropdown befüllen
+Object.entries(schemas).forEach(([key, schema]) => {
+  const opt = document.createElement("option");
+  opt.value = key;
+  opt.textContent = schema.label;
+  schemaSelect.appendChild(opt);
+});
+
 /* ===== DOM ===== */
 const formEl     = document.getElementById("therapyForm");
 const vornameEl  = document.getElementById("vorname");
@@ -121,7 +193,7 @@ const graphicEl  = document.getElementById("graphic");
 const patientEl  = document.getElementById("patient");
 const tableEl    = document.getElementById("table");
 
-const schema = JSON.parse(document.getElementById("schema").textContent);
+
 
 /* ===== Geburtsdatum ===== */
 function isValidBirthdate(value){
@@ -198,9 +270,8 @@ function subtractWorkdays(date, n){
 }
 
 /* ===== Planung ===== */
-function buildCycles(startDate){
-  const cycles = [];
-
+function buildCycles(startDate, schema){
+  const cycles = [];  
   for (let c = 0; c < schema.anzahl_zyklen; c++){
     const cycleStart = addDays(startDate, c * schema.zyklus_tage);
     const nextCycleStart = addDays(cycleStart, schema.zyklus_tage);
@@ -258,16 +329,21 @@ function renderGraphicOneCycle(cycle){
     const holidayCls = isNRWHoliday(d.date) ? "holiday" : "";
     grid += `<div class="day ${weekendCls} ${holidayCls}">`;
 
-    // Events (Therapie / Injection / Lab)
-    d.events.forEach(ev=>{
-      if (ev.type === "therapy"){
-        // EC als E/C Balken
+    const therapies = d.events.filter(ev => ev.type === "therapy");
+    if (therapies.length > 0){
+      grid += `<div class="therapy-bars">`;
+      therapies.forEach(t => {
+        const label = t.short || t.label || "";
         grid += `
-          <div class="therapy-bars" aria-label="${ev.label}">
-            <div class="bar e">E</div>
-            <div class="bar c">C</div>
+          <div class="bar" style="background:${t.color || "#6b7280"}">
+            ${label}
           </div>`;
-      } else if (ev.type === "injection"){
+      });
+      grid += `</div>`;
+    }
+
+    d.events.forEach(ev=>{
+      if (ev.type === "injection"){
         grid += `
           <div class="icon-block">
             <div class="icon">💉</div>
@@ -352,8 +428,10 @@ formEl.addEventListener("submit", (e)=>{
     return;
   }
 
-  const cycles = buildCycles(startDate);
+    const schemaKey = schemaSelect.value;
+    const schema = schemas[schemaKey];
 
+    const cycles = buildCycles(startDate, schema);
   // Patientenkopf
   patientEl.innerHTML = `
     <p>
@@ -368,6 +446,7 @@ formEl.addEventListener("submit", (e)=>{
   renderTableAllCycles(cycles);
 
   planEl.style.display = "block";
+  document.getElementById("title").textContent = `Therapieplan – ${schema.label}`;
 });
 </script>
 
