@@ -274,7 +274,10 @@
     <label>Geburtsdatum (optional, TT.MM.JJJJ)
       <input id="geburt" placeholder="TT.MM.JJJJ">
     </label>
-    <label>Chemotherapie-Schema<select id="schemaSelect" required></select></label>
+    <label>Chemotherapie-Schema
+      <input list="schemaList" id="schemaInput" required>
+      <datalist id="schemaList"></datalist>
+    </label>    
     <label>Startdatum Zyklus 1
       <input type="date" id="startdatum" required>
     </label>
@@ -317,7 +320,7 @@
     "anzahl_zyklen": 4,
     "events": [
       { "type": "therapy", "drug": "Epirubicin", "short": "E", "color": "#2563eb", "day": 1 },
-      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "color": "#b91c1c;", "day": 1 },
+      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "color": "#b91c1c", "day": 1 },
       { "type": "injection", "label": "Pegfilgrastim", "day": 2 },
       { "type": "lab", "label": "Labor", "day": 8 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
@@ -329,7 +332,7 @@
     "anzahl_zyklen": 4,
     "events": [
       { "type": "therapy", "drug": "Epirubicin", "short": "E", "color": "#2563eb", "day": 1 },
-      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "color": "#b91c1c;", "day": 1 },
+      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "color": "#b91c1c", "day": 1 },
       { "type": "lab", "label": "Labor", "day": 8 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
     ]
@@ -363,7 +366,7 @@
     "anzahl_zyklen": 4,
     "events": [
       { "type": "therapy", "drug": "Epirubicin", "short": "E", "color": "#2563eb", "day": 1 },
-      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "color": "#b91c1c;", "day": 1 },
+      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "color": "#b91c1c", "day": 1 },
       { "type": "therapy", "drug": "Pembrolizumab", "short": "Pem", "color": "#8b5cf6", "day": 1 },      
       { "type": "lab", "label": "Labor", "day": 8 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
@@ -397,17 +400,36 @@
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 7 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 12 }
     ]
+  },
+  "APT": {
+    "label": "APT (Paclitaxel, Trastuzumab qw)",
+    "zyklus_tage": 7,
+    "anzahl_zyklen": 12,
+    "events": [
+      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "color": "#059669", "day": 1 },
+      { "type": "therapy", "drug": "Trastuzumab", "short": "Her", "color": "#7c3aed", "day": 1 },
+      { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
+    ]
   }
 }
 </script>
 
 <script>
 const schemas = JSON.parse(document.getElementById("schemas").textContent);
-const schemaSelect = document.getElementById("schemaSelect");
+// const schemaSelect = document.getElementById("schemaSelect");
+// Object.entries(schemas).forEach(([key, schema]) => {
+//   const opt = document.createElement("option");
+//   opt.value = key; opt.textContent = schema.label;
+//   schemaSelect.appendChild(opt);
+// });
+const schemaInput = document.getElementById("schemaInput");
+const schemaList = document.getElementById("schemaList");
+
 Object.entries(schemas).forEach(([key, schema]) => {
-  const opt = document.createElement("option");
-  opt.value = key; opt.textContent = schema.label;
-  schemaSelect.appendChild(opt);
+  const option = document.createElement("option");
+  option.value = schema.label;   // was der Nutzer sieht
+  option.dataset.key = key;      // interner Schlüssel
+  schemaList.appendChild(option);
 });
 
 const formEl = document.getElementById("therapyForm");
@@ -635,8 +657,17 @@ formEl.addEventListener("submit", (e)=>{
   const startDate = new Date(startEl.value + 'T12:00:00');
   if (!isWorkday(startDate)){ alert("Startdatum muss ein Arbeitstag sein!"); return; }
 
-  const schema = schemas[schemaSelect.value];
-  const cycles = buildCycles(startDate, schema);
+  const selected = Object.entries(schemas).find(
+    // ([key, schema]) => schema.label === schemaInput.value
+    ([key, schema]) => schema.label.toLowerCase().includes(schemaInput.value.toLowerCase())
+  );
+
+  if (!selected) {
+    alert("Bitte ein gültiges Schema auswählen.");
+    return;
+  }
+
+  const [schemaKey, schema] = selected;  const cycles = buildCycles(startDate, schema);
 
   // Der Patientenkopf enthält nun explizit das Schema als Titel
   patientEl.innerHTML = `
