@@ -8,7 +8,13 @@
   * {
     box-sizing: border-box;
   }
-
+  :root {
+    --primary: #2563eb;          /* Hauptblau */
+    --primary-dark: #1e40af;     /* dunkler für Hover */
+    --primary-light: #dbeafe;    /* helles Blau */
+    --table-stripe: #f1f5f9;     /* sehr dezentes Grau-Blau */
+    --text-dark: #1f2937;
+  }
   body { font-family: system-ui, sans-serif; background:#f3f4f6; padding:2rem; }
   .container { max-width:1100px; margin:auto; }
 
@@ -61,13 +67,13 @@
     padding: 1rem;
     font-size: 1.05rem;
     border-radius: 12px;
-    background: linear-gradient(135deg, #2563eb, #1e40af);
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
 
   form button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 22px rgba(0,0,0,0.18);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.15);
   }
 
 
@@ -167,36 +173,52 @@
 
   table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate; /* wichtig für runde Ecken */
+    border-spacing: 0;
     margin-top: 1.5rem;
     font-size: 0.9rem;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
   }
 
+  /* Header */
   th {
-    background: #2563eb;
+    background: var(--primary);
     color: white;
-    padding: 0.7rem;
+    padding: 0.75rem;
     text-transform: uppercase;
     font-size: 0.75rem;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
     text-align: left;
   }
 
+  /* Runde obere Ecken */
+  th:first-child { border-top-left-radius: 12px; }
+  th:last-child  { border-top-right-radius: 12px; }
+
+  /* Zellen */
   td {
-    padding: 0.65rem 0.7rem;
+    padding: 0.7rem 0.8rem;
+    color: var(--text-dark);
   }
 
+  /* Zebra-Streifen */
   tbody tr:nth-child(even) {
-    background: #f3f4f6;
+    background: var(--table-stripe);
   }
 
+  /* Hover dezenter */
   tbody tr:hover {
-    background: #fee2e2;
+    background: var(--primary-light);
   }
 
-  td:first-child {
-    font-weight: 600;
-    color: #374151;
+  /* Letzte Zeile abrunden */
+  tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 12px;
+  }
+  tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 12px;
   }
 
   .warning {
@@ -276,6 +298,13 @@
     <div id="table-container">
         <h2 class="no-print">Tabellarische Übersicht (alle Zyklen)</h2>
         <div id="table"></div>
+    </div>
+    <div id="print-footer" class="print-footer">
+      <hr>
+      <p>
+        Telefonnummer GynOnko Ambulanz: 0241/6006-1685<br>
+        24/7 Notfall-Rufnummer: 0241/6006-0 (mit diensthabender Gynäkologin verbinden lassen)
+      </p>
     </div>
   </div>
 </div>
