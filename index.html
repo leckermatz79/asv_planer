@@ -5,6 +5,10 @@
 <title>Therapieplan – Onkologie</title>
 
 <style>
+  * {
+    box-sizing: border-box;
+  }
+
   body { font-family: system-ui, sans-serif; background:#f3f4f6; padding:2rem; }
   .container { max-width:1100px; margin:auto; }
 
@@ -12,15 +16,69 @@
     background:#fff; padding:1.5rem; border-radius:12px; margin-bottom:2rem;
     box-shadow:0 10px 25px rgba(0,0,0,0.08);
   }
+  /* Formular als sauberes Grid */
+  form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.4rem 1.8rem;
+    align-items: start;
+  }
+
+  /* Label als Block */
+  form label {
+    display: block;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+  }
+
+  /* Inputs */
+  form input,
+  form select {
+    display: block;
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    font-size: 0.95rem;
+    background: #fff;
+    transition: all 0.2s ease;
+  }
+
+  form input:focus,
+  form select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+  }
+
+  /* Button volle Breite */
+  form button {
+    grid-column: 1 / -1;
+    margin-top: 1rem;
+    padding: 1rem;
+    font-size: 1.05rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  form button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.18);
+  }
+
 
   label { font-weight:600; font-size:0.85rem; display:block; }
   input, button { width:100%; padding:0.6rem; margin-top:0.25rem; }
   button {
-    background:#dc2626; color:#fff; border:none; border-radius:8px;
+    background:#2563eb; color:#fff; border:none; border-radius:8px;
     font-weight:600; cursor:pointer;
   }
 
-  .warning { color:#dc2626; font-weight:600; }
+  .warning { color:#2563eb; font-weight:600; }
 
   /* ===== Grafik-Styles ===== */
   .weekday-header{
@@ -44,7 +102,7 @@
   }
 
   .day.weekend{ background:#e5e7eb; }
-  .day.holiday{ outline:2px solid #dc2626; outline-offset:-2px; }
+  .day.holiday{ outline:2px solid #2563eb; outline-offset:-2px; }
   
   .therapy-bars {
     display: flex;
@@ -107,9 +165,44 @@
   .legend-item { display:flex; align-items:center; gap:8px; }
   .legend-bar { width:18px; height:18px; border-radius:4px; }
 
-  table{ width:100%; border-collapse:collapse; margin-top:1rem; }
-  th, td{ padding:0.5rem; border-bottom:1px solid #e5e7eb; text-align:left; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+  }
 
+  th {
+    background: #2563eb;
+    color: white;
+    padding: 0.7rem;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    text-align: left;
+  }
+
+  td {
+    padding: 0.65rem 0.7rem;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #f3f4f6;
+  }
+
+  tbody tr:hover {
+    background: #fee2e2;
+  }
+
+  td:first-child {
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .warning {
+    font-weight: 600;
+    color: #b91c1c;
+  }
   /* ===== DRUCK-LOGIK ===== */
   @page {
     size: landscape;
@@ -194,8 +287,8 @@
     "zyklus_tage": 14,
     "anzahl_zyklen": 4,
     "events": [
-      { "type": "therapy", "drug": "Epirubicin", "short": "E", "color": "#dc2626", "day": 1 },
-      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "color": "#2563eb", "day": 1 },
+      { "type": "therapy", "drug": "Epirubicin", "short": "E", "color": "#2563eb", "day": 1 },
+      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "color": "#b91c1c;", "day": 1 },
       { "type": "injection", "label": "Pegfilgrastim", "day": 2 },
       { "type": "lab", "label": "Labor", "day": 8 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
@@ -206,8 +299,8 @@
     "zyklus_tage": 21,
     "anzahl_zyklen": 4,
     "events": [
-      { "type": "therapy", "drug": "Epirubicin", "short": "E", "color": "#dc2626", "day": 1 },
-      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "color": "#2563eb", "day": 1 },
+      { "type": "therapy", "drug": "Epirubicin", "short": "E", "color": "#2563eb", "day": 1 },
+      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "color": "#b91c1c;", "day": 1 },
       { "type": "lab", "label": "Labor", "day": 8 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
     ]
@@ -240,8 +333,8 @@
     "zyklus_tage": 21,
     "anzahl_zyklen": 4,
     "events": [
-      { "type": "therapy", "drug": "Epirubicin", "short": "E", "color": "#dc2626", "day": 1 },
-      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "color": "#2563eb", "day": 1 },
+      { "type": "therapy", "drug": "Epirubicin", "short": "E", "color": "#2563eb", "day": 1 },
+      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "color": "#b91c1c;", "day": 1 },
       { "type": "therapy", "drug": "Pembrolizumab", "short": "Pem", "color": "#8b5cf6", "day": 1 },      
       { "type": "lab", "label": "Labor", "day": 8 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
@@ -490,7 +583,7 @@ function printTable(){
 
 //   patientEl.innerHTML = `
 //     <div style="border-bottom: 2px solid #333; margin-bottom: 20px; padding-bottom: 10px;">
-//       <h2 style="margin:0; color:#dc2626; font-size: 1.6rem;">Therapieplan: ${schema.label}</h2>
+//       <h2 style="margin:0; color:#2563eb; font-size: 1.6rem;">Therapieplan: ${schema.label}</h2>
 //       <p style="margin:5px 0; font-size: 1.1rem;">
 //         <strong>Patient:</strong> ${vornameEl.value} ${nachnameEl.value} | 
 //         <strong>Geburtsdatum:</strong> ${geburt || "—"}<br>
@@ -519,7 +612,7 @@ formEl.addEventListener("submit", (e)=>{
   // Der Patientenkopf enthält nun explizit das Schema als Titel
   patientEl.innerHTML = `
     <div style="border-bottom: 2px solid #333; margin-bottom: 20px; padding-bottom: 10px;">
-      <h1 style="margin:0 0 10px 0; color:#dc2626; font-size: 1.8rem; display: block !important;">
+      <h1 style="margin:0 0 10px 0; color:#2563eb; font-size: 1.8rem; display: block !important;">
         Therapieplan: ${schema.label}
       </h1>
       <p style="margin:0; font-size: 1.1rem; line-height: 1.5;">
