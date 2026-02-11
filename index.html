@@ -225,6 +225,13 @@
     font-weight: 600;
     color: #b91c1c;
   }
+  .schema-info {
+    margin-top: 12px;
+    font-size: 0.9rem;
+    color: #374151;
+    padding-top: 8px;
+    border-top: 1px solid #e5e7eb;
+  }
   /* ===== DRUCK-LOGIK ===== */
   @page {
     size: landscape;
@@ -373,7 +380,7 @@
     ]
   },
   "TCbHP_q3w": {
-    "label": "Docetaxel, Carboplatin, Trastuzumab, Pertuzumab q3w",
+    "label": "TCbHP: Docetaxel, Carboplatin, Trastuzumab, Pertuzumab q3w",
     "zyklus_tage": 21,
     "anzahl_zyklen": 6,
     "events": [
@@ -507,14 +514,37 @@ function buildCycles(startDate, schema){
 function renderLegend(schema){
   const items = [];
   const therapies = schema.events.filter(e => e.type === "therapy");
+
   const uniqueTherapies = {};
   therapies.forEach(t => uniqueTherapies[t.short || t.drug] = t);
+
   Object.values(uniqueTherapies).forEach(t => {
-    items.push(`<div class="legend-item"><div class="legend-bar" style="background:${t.color}"></div><span>${t.drug}</span></div>`);
+    items.push(`
+      <div class="legend-item">
+        <div class="legend-bar" style="background:${t.color}"></div>
+        <span>${t.drug}</span>
+      </div>
+    `);
   });
-  if (schema.events.some(e => e.type === "injection")) items.push(`<div class="legend-item"><span>💉</span><span>Pegfilgrastim</span></div>`);
-  if (schema.events.some(e => e.type === "lab")) items.push(`<div class="legend-item"><span>🩸</span><span>Labor</span></div>`);
-  document.getElementById("legend").innerHTML = `<div class="legend">${items.join("")}</div>`;
+
+  if (schema.events.some(e => e.type === "injection"))
+    items.push(`<div class="legend-item"><span>💉</span><span>Pegfilgrastim</span></div>`);
+
+  if (schema.events.some(e => e.type === "lab"))
+    items.push(`<div class="legend-item"><span>🩸</span><span>Labor</span></div>`);
+
+  const infoText = `
+    <div class="schema-info">
+      Dieses Behandlungsschema umfasst 
+      <strong>${schema.zyklus_tage} Tage pro Zyklus</strong> 
+      und wird insgesamt über 
+      <strong>${schema.anzahl_zyklen} Zyklen</strong> 
+      durchgeführt.
+    </div>
+  `;
+
+  document.getElementById("legend").innerHTML =
+    `<div class="legend">${items.join("")}</div>${infoText}`;
 }
 
 // function renderGraphicOneCycle(cycle){
@@ -555,7 +585,9 @@ function renderGraphicOneCycle(cycle){
       if(ev.type === "lab") iconsHtml += `<div class="icon-block"><div class="icon">🩸</div><div class="icon-label">${ev.label}</div></div>`;
     });
 
-    const dayLabel = (d.day === 1 || d.day === 8) ? `<div class="day-label">d${d.day}</div>` : "<div></div>";
+    const dayLabel = ((d.day - 1) % 7 === 0)
+      ? `<div class="day-label">d${d.day}</div>`
+      : "";
 
     return `
       <div class="day ${cls}">
