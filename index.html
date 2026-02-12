@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <title>Therapieplan – Onkologie</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="any">
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/favicon.ico">
+<meta name="theme-color" content="#2563eb">
+<link rel="shortcut icon" href="favicon.ico">
 
 <style>
   * {
@@ -389,7 +394,28 @@
       Begleitmedikation auswählen:
       <select id="supportSelect"></select>
     </label>
+    <label style="grid-column: 1 / -1;">
+      <input type="checkbox" id="gcsfEnabled">
+      G-CSF Gabe?
+    </label>
 
+    <label id="gcsfWrapper" style="display:none; grid-column: 1 / -1;">
+      Präparat auswählen:
+      <select id="gcsfSelect">
+        <option value="Pegfilgrastim" selected>Pegfilgrastim</option>
+        <option value="Lipegfilgrastim">Lipegfilgrastim</option>
+        <option value="Efbemalenograstim">Efbemalenograstim</option>
+        <option value="Filgrastim">Filgrastim</option>
+      </select>
+    </label>
+
+    <label id="gcsfDayWrapper" style="display:none; grid-column: 1 / -1;">
+      Applikationstag:
+      <select id="gcsfDay">
+        <option value="2">d2</option>
+        <option value="3">d3</option>
+      </select>
+    </label>
     <label style="grid-column: 1 / -1;">    
       <input type="checkbox" id="hasFollowUp">
       Anschlusstherapie?
@@ -443,10 +469,10 @@
     "label": "EC q2w",
     "zyklus_tage": 14,
     "anzahl_zyklen": 4,
+    "default_gcsf": true,
     "events": [
       { "type": "therapy", "drug": "Epirubicin", "short": "E", "color": "#2563eb", "day": 1 },
       { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "color": "#b91c1c", "day": 1 },
-      { "type": "injection", "label": "Pegfilgrastim", "day": 2 },
       { "type": "lab", "label": "Labor", "day": 8 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
     ]
@@ -501,12 +527,12 @@
     "label": "TCbHP: Docetaxel, Carboplatin, Trastuzumab, Pertuzumab q3w",
     "zyklus_tage": 21,
     "anzahl_zyklen": 6,
+    "default_gcsf": true,
     "events": [
       { "type": "therapy", "drug": "Docetaxel", "short": "T", "color": "#059669", "day": 1 },    
       { "type": "therapy", "drug": "Carboplatin", "short": "Cb", "color": "#f59e0b", "day": 1 },      
       { "type": "therapy", "drug": "Trastuzumab", "short": "Her", "color": "#7c3aed", "day": 1 },
       { "type": "therapy", "drug": "Pertuzumab", "short": "Per", "color": "#c026d3", "day": 1 },     
-      { "type": "injection", "label": "Pegfilgrastim", "day": 3 },    
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 },
       { "type": "lab", "label": "Labor", "day": 8 }
     ]
@@ -577,11 +603,52 @@ const supportSchemas = {
   }
 };
 
+const gcsfEnabledEl = document.getElementById("gcsfEnabled");
+const gcsfWrapper = document.getElementById("gcsfWrapper");
+const gcsfSelect = document.getElementById("gcsfSelect");
+const gcsfDayWrapper = document.getElementById("gcsfDayWrapper");
+
+function updateGcsfVisibility() {
+  const show = gcsfEnabledEl.checked;
+  gcsfWrapper.style.display = show ? "block" : "none";
+
+  // Filgrastim = mehrtägig → kein fixer d2/d3 Tag
+  const isFilgrastim = gcsfSelect.value === "Filgrastim";
+
+  gcsfDayWrapper.style.display =
+    show && !isFilgrastim ? "block" : "none";
+}
+
+gcsfEnabledEl.addEventListener("change", updateGcsfVisibility);
+gcsfSelect.addEventListener("change", updateGcsfVisibility);
+
+updateGcsfVisibility();
+
 Object.entries(schemas).forEach(([key, schema]) => {
   const option = document.createElement("option");
   option.value = schema.label;   // was der Nutzer sieht
   option.dataset.key = key;      // interner Schlüssel
   schemaList.appendChild(option);
+});
+
+// ==============================
+// Default G-CSF beim Schemawechsel
+// ==============================
+schemaInput.addEventListener("change", () => {
+
+  const selected = Object.entries(schemas).find(
+    ([key, schema]) =>
+      schema.label.toLowerCase() === schemaInput.value.toLowerCase()
+  );
+
+  if (!selected) return;
+
+  const [, schema] = selected;
+
+  // Default aus JSON setzen (true / false)
+  gcsfEnabledEl.checked = !!schema.default_gcsf;
+
+  updateGcsfVisibility();
 });
 
 Object.entries(supportSchemas).forEach(([key, schema]) => {
@@ -727,9 +794,20 @@ function renderLegend(schema){
     `);
   });
 
-  if (schema.events.some(e => e.type === "injection"))
-    items.push(`<div class="legend-item"><span>💉</span><span>Pegfilgrastim</span></div>`);
+  const injections = schema.events.filter(e => e.type === "injection");
+  const uniqueInjections = {};
+  injections.forEach(i => {
+    uniqueInjections[i.label] = i;
+  });
 
+  Object.values(uniqueInjections).forEach(i => {
+    items.push(`
+      <div class="legend-item">
+        <span>💉</span>
+        <span>${i.label}</span>
+      </div>
+    `);
+  });
   if (schema.events.some(e => e.type === "lab"))
     items.push(`<div class="legend-item"><span>🩸</span><span>Labor</span></div>`);
 
@@ -863,19 +941,19 @@ function renderSupportPlan(
   mainLabel,
   mainCycleCount = null,
   followLabel = null,
-  followSupportSchema = null
+  followSupportSchema = null,
+  gcsfConfig = null
 ) {
   let graphicHtml = "";
 
-  // Patch: Provide idx to forEach and use idx for follow-up label logic
   cycles.forEach((cycle, idx) => {
+
     let currentLabel = mainLabel;
 
     if (mainCycleCount && followLabel && idx >= mainCycleCount) {
       currentLabel = followLabel;
     }
 
-    // Wähle korrektes Begleitmedikationsschema (Haupt- oder Folgetherapie)
     let currentSupportSchema = mainSupportSchema;
     if (mainCycleCount && followSupportSchema && idx >= mainCycleCount) {
       currentSupportSchema = followSupportSchema;
@@ -889,16 +967,31 @@ function renderSupportPlan(
 
     const totalDays = cycle.days.length;
 
-    // Welche Wochen enthalten Begleitmedikation?
     const weeksToRender = new Set();
+
+    // Wochen aus Begleitmedikation
     currentSupportSchema.days.forEach(supportDay => {
       const weekIndex = Math.floor((supportDay.day - 1) / 7);
       weeksToRender.add(weekIndex);
     });
 
+    // Wochen aus G-CSF
+    if (gcsfConfig) {
+      if (gcsfConfig.multipleDays) {
+        gcsfConfig.multipleDays.forEach(d => {
+          const weekIndex = Math.floor((d - 1) / 7);
+          weeksToRender.add(weekIndex);
+        });
+      } else if (gcsfConfig.day) {
+        const weekIndex = Math.floor((gcsfConfig.day - 1) / 7);
+        weeksToRender.add(weekIndex);
+      }
+    }
+
     const sortedWeeks = Array.from(weeksToRender).sort((a, b) => a - b);
 
     sortedWeeks.forEach(w => {
+
       graphicHtml += `
         <div style="
           display:grid;
@@ -909,20 +1002,24 @@ function renderSupportPlan(
       `;
 
       for (let i = 0; i < 7; i++) {
+
         const dayIndex = w * 7 + i;
         if (dayIndex >= totalDays) break;
 
         const dayObj = cycle.days[dayIndex];
         const date = dayObj.date;
         const weekday = weekdays[date.getDay()];
-        const supportDay = currentSupportSchema.days.find(d => d.day === dayObj.day);
+
+        const supportDay = currentSupportSchema.days.find(
+          d => d.day === dayObj.day
+        );
 
         const isWeekendDay = isWeekend(date);
         const isHolidayDay = isNRWHoliday(date);
 
         let warningIcon = "";
-        if (isHolidayDay) warningIcon = " ⚠️ Feiertag";
-        else if (isWeekendDay) warningIcon = " ⚠️ Wochenende";
+        if (isHolidayDay) warningIcon = "⚠️ Feiertag";
+        else if (isWeekendDay) warningIcon = "⚠️ Wochenende";
 
         graphicHtml += `
           <div style="
@@ -947,6 +1044,7 @@ function renderSupportPlan(
             </div>
         `;
 
+        // 🔷 Normale Begleitmedikation
         if (supportDay) {
           supportDay.meds.forEach(med => {
             graphicHtml += `
@@ -965,15 +1063,44 @@ function renderSupportPlan(
           });
         }
 
+        // 🔷 G-CSF Integration (HIER gehört es hin)
+        if (gcsfConfig) {
+
+          let gcsfMatch = false;
+
+          if (gcsfConfig.multipleDays) {
+            gcsfMatch = gcsfConfig.multipleDays.includes(dayObj.day);
+          } else if (gcsfConfig.day) {
+            gcsfMatch = dayObj.day === gcsfConfig.day;
+          }
+
+          if (gcsfMatch) {
+            graphicHtml += `
+              <div style="
+                margin-bottom:6px;
+                padding:6px;
+                background:#e0f2fe;
+                border-radius:8px;
+                font-size:0.8rem;
+                box-shadow:0 1px 3px rgba(0,0,0,0.05);
+              ">
+                <strong>${gcsfConfig.drug}</strong><br>
+                Injektion
+              </div>
+            `;
+          }
+        }
+
         graphicHtml += `</div>`;
       }
 
       graphicHtml += `</div>`;
     });
+
   });
 
   supportGraphicEl.innerHTML = graphicHtml;
-
+}
   // /* ===== TABELLARISCHE ÜBERSICHT ===== */
 
   // let html = `
@@ -1034,7 +1161,6 @@ function renderSupportPlan(
   // `;
 
   // supportEl.innerHTML = html;
-}
 
 /* ===== DRUCK-FUNKTIONEN ===== */
 function printGraphic() {
@@ -1058,14 +1184,22 @@ function printSupport() {
 
 formEl.addEventListener("submit", (e)=>{
   e.preventDefault();
+
   const geburt = geburtEl.value.trim();
-  if (!isValidBirthdate(geburt)) { alert("Geburtsdatum prüfen!"); return; }
-  
-  const startDate = new Date(startEl.value + 'T12:00:00');
-  if (!isWorkday(startDate)){ alert("Startdatum muss ein Arbeitstag sein!"); return; }
+  if (!isValidBirthdate(geburt)) {
+    alert("Geburtsdatum prüfen!");
+    return;
+  }
+
+  const startDate = new Date(startEl.value + "T12:00:00");
+  if (!isWorkday(startDate)){
+    alert("Startdatum muss ein Arbeitstag sein!");
+    return;
+  }
 
   const selected = Object.entries(schemas).find(
-    ([key, schema]) => schema.label.toLowerCase().includes(schemaInput.value.toLowerCase())
+    ([key, schema]) =>
+      schema.label.toLowerCase().includes(schemaInput.value.toLowerCase())
   );
 
   if (!selected) {
@@ -1073,106 +1207,224 @@ formEl.addEventListener("submit", (e)=>{
     return;
   }
 
-  const [schemaKey, schema] = selected;  
-
+  const [schemaKey, schema] = selected;
   const hasFollowUp = hasFollowUpEl.checked;
 
-  let cyclesMain = buildCycles(startDate, schema, !hasFollowUp);
+  /* ==============================
+     G-CSF KONFIGURATION BAUEN
+  ============================== */
+
+  let gcsfConfig = null;
+  let gcsfEvents = [];
+
+  // // Default aus Schema übernehmen
+  // gcsfEnabledEl.checked = !!schema.default_gcsf;
+  // updateGcsfVisibility();
+
+  if (gcsfEnabledEl.checked) {
+
+    const drug = gcsfSelect.value;
+
+    if (drug === "Filgrastim") {
+      const days = [2,3,4,5,6];
+
+      gcsfConfig = {
+        drug,
+        multipleDays: days
+      };
+
+      days.forEach(d => {
+        gcsfEvents.push({
+          type: "injection",
+          label: drug,
+          day: d
+        });
+      });
+
+    } else {
+
+      const day = parseInt(gcsfDay.value);
+
+      gcsfConfig = {
+        drug,
+        day
+      };
+
+      gcsfEvents.push({
+        type: "injection",
+        label: drug,
+        day
+      });
+    }
+  }
+
+  /* ==============================
+     HAUPTSCHEMA ERWEITERN
+  ============================== */
+
+  const extendedSchema = JSON.parse(JSON.stringify(schema));
+
+  if (gcsfEvents.length > 0) {
+    extendedSchema.events.push(...gcsfEvents);
+  }
+
+  let cyclesMain = buildCycles(
+    startDate,
+    extendedSchema,
+    !hasFollowUp
+  );
+
   let allCycles = [...cyclesMain];
 
-  graphicEl.innerHTML = "";   // Wichtig: vorher leeren
+  /* ==============================
+     FOLLOW-UP
+  ============================== */
 
-  renderGraphicOneCycle(cyclesMain[0], graphicEl);
-  const mainLegendHtml = renderLegend(schema);
-  const mainLegendWrapper = document.createElement("div");
-  mainLegendWrapper.innerHTML = mainLegendHtml;
-  graphicEl.appendChild(mainLegendWrapper);
+  let followSchema = null;
+  let followSupportSchema = null;
+
   if (hasFollowUp) {
 
-    const followSchema = schemas[followUpSelect.value];
+    followSchema = schemas[followUpSelect.value];
+
     const followStart = addDays(
-        startDate,
-        schema.zyklus_tage * schema.anzahl_zyklen
+      startDate,
+      schema.zyklus_tage * schema.anzahl_zyklen
     );
 
-    const cyclesFollow = buildCycles(followStart, followSchema, false);
+    const cyclesFollow = buildCycles(
+      followStart,
+      followSchema,
+      false
+    );
+
     allCycles = [...cyclesMain, ...cyclesFollow];
+  }
+
+  /* ==============================
+     GRAFIK HAUPTTHERAPIE
+  ============================== */
+
+  graphicEl.innerHTML = "";
+
+  renderGraphicOneCycle(cyclesMain[0], graphicEl);
+
+  const mainLegendWrapper = document.createElement("div");
+  mainLegendWrapper.innerHTML = renderLegend(extendedSchema);
+  graphicEl.appendChild(mainLegendWrapper);
+
+  /* ==============================
+     GRAFIK FOLLOW
+  ============================== */
+
+  if (hasFollowUp) {
 
     const secondWrapper = document.createElement("div");
-    secondWrapper.innerHTML = `<h2 style="margin-top:2rem;">Folgetherapie: ${followSchema.label}</h2>`;
+    secondWrapper.innerHTML =
+      `<h2 style="margin-top:2rem;">Folgetherapie: ${followSchema.label}</h2>`;
 
     const secondGraphic = document.createElement("div");
-
     secondWrapper.appendChild(secondGraphic);
     graphicEl.appendChild(secondWrapper);
 
+    const followStart = addDays(
+      startDate,
+      schema.zyklus_tage * schema.anzahl_zyklen
+    );
+
+    const cyclesFollow = buildCycles(followStart, followSchema, false);
+
     renderGraphicOneCycle(cyclesFollow[0], secondGraphic);
-    const followLegendHtml = renderLegend(followSchema);
+
     const followLegendWrapper = document.createElement("div");
-    followLegendWrapper.innerHTML = followLegendHtml;
+    followLegendWrapper.innerHTML = renderLegend(followSchema);
     secondWrapper.appendChild(followLegendWrapper);
   }
-  // Der Patientenkopf enthält nun explizit das Schema als Titel
 
-// Titel dynamisch zusammensetzen
-let titleText = schema.label;
+  /* ==============================
+     PATIENTENKOPF
+  ============================== */
 
-if (hasFollowUp) {
-  const followSchema = schemas[followUpSelect.value];
-  titleText += " → " + followSchema.label;
-}
+  let titleText = schema.label;
 
-// Patientenkopf
-patientEl.innerHTML = `
-  <div style="border-bottom: 2px solid #333; margin-bottom: 20px; padding-bottom: 10px;">
-    <h1 style="margin:0 0 10px 0; color:#2563eb; font-size: 1.8rem;">
-      Therapieplan: ${titleText}
-    </h1>
-    <p style="margin:0; font-size: 1.1rem; line-height: 1.5;">
-      <strong>Patient:</strong> ${vornameEl.value} ${nachnameEl.value} | 
-      <strong>Geburtsdatum:</strong> ${geburt || "—"}<br> 
-      <strong>Datum erste Therapie:</strong> ${fmt(startDate)}<br>
-      <span style="font-size: 0.9rem; color: #666;">
-        Erstellt am: ${new Date().toLocaleDateString("de-DE")}
-      </span>
-    </p>
-  </div>`;
+  if (hasFollowUp) {
+    titleText += " → " + followSchema.label;
+  }
 
-  window.onafterprint = () => {
-    document.body.classList.remove("print-graphic","print-table");
-  };
+  patientEl.innerHTML = `
+    <div style="border-bottom:2px solid #333; margin-bottom:20px; padding-bottom:10px;">
+      <h1 style="margin:0 0 10px 0; color:#2563eb; font-size:1.8rem;">
+        Therapieplan: ${titleText}
+      </h1>
+      <p style="margin:0; font-size:1.1rem; line-height:1.5;">
+        <strong>Patient:</strong> ${vornameEl.value} ${nachnameEl.value} |
+        <strong>Geburtsdatum:</strong> ${geburt || "—"}<br>
+        <strong>Datum erste Therapie:</strong> ${fmt(startDate)}<br>
+        <span style="font-size:0.9rem; color:#666;">
+          Erstellt am: ${new Date().toLocaleDateString("de-DE")}
+        </span>
+      </p>
+    </div>
+  `;
+
+  /* ==============================
+     TABELLE
+  ============================== */
 
   if (hasFollowUp) {
     renderTableAllCycles(
       allCycles,
-      schemas[followUpSelect.value].label,
+      followSchema.label,
       cyclesMain.length
     );
   } else {
     renderTableAllCycles(allCycles);
   }
+
+  /* ==============================
+     BEGLEITMEDIKATION
+  ============================== */
+
   supportEl.innerHTML = "";
   supportGraphicEl.innerHTML = "";
 
-  const mainSupportSchema = supportSchemas[supportSelect.value] || null;
-  const followSupportSchema = hasFollowUp
-    ? supportSchemas[supportFollowUpSelect.value] || null
-    : null;
+  const mainSupportSchema =
+    supportSchemas[supportSelect.value] || null;
+
+  if (hasFollowUp) {
+    followSupportSchema =
+      supportSchemas[supportFollowUpSelect.value] || null;
+  }
 
   if (mainSupportSchema) {
+
     renderSupportPlan(
       allCycles,
       mainSupportSchema,
       titleText,
       schema.label,
-      hasFollowUp ? cyclesMain.length : null,
-      hasFollowUp ? schemas[followUpSelect.value].label : null,
-      followSupportSchema
+      cyclesMain.length,
+      hasFollowUp ? followSchema.label : null,
+      followSupportSchema,
+      gcsfConfig
     );
   }
 
+  /* ==============================
+     FINAL
+  ============================== */
+
+  window.onafterprint = () => {
+    document.body.classList.remove(
+      "print-graphic",
+      "print-table",
+      "print-support"
+    );
+  };
+
   planEl.style.display = "block";
-  planEl.scrollIntoView({ behavior: 'smooth' });
+  planEl.scrollIntoView({ behavior: "smooth" });
+
 });
 
 </script>
