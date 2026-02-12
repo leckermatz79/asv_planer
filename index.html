@@ -288,7 +288,8 @@
   #graphic,
   #legend,
   #table,
-  #print-footer {
+  #print-footer,
+  #supportPlan {
     display: none;
   }
 
@@ -302,6 +303,21 @@
 
   body.print-graphic {
     page: graphicPage;
+  }
+
+  body.print-support #supportPlan,
+  body.print-support #patient,
+  body.print-support #print-footer {
+    display: block !important;
+  }
+
+  body.print-support {
+    page: supportPage;
+  }
+
+  @page supportPage {
+    size: A4 portrait;
+    margin: 15mm;
   }
 
   @page graphicPage {
@@ -379,6 +395,15 @@
       Folgetherapie auswählen:
       <select id="followUpSelect"></select>
     </label>
+    <label style="grid-column: 1 / -1;">
+      Begleitmedikation auswählen:
+      <select id="supportSelect"></select>
+    </label>
+
+    <label id="supportFollowUpWrapper" style="display:none; grid-column: 1 / -1;">
+      Begleitmedikation Folgetherapie:
+      <select id="supportFollowUpSelect"></select>
+    </label>
     <button type="submit">Plan berechnen</button>
   </form>
 
@@ -394,11 +419,13 @@
     <div class="no-print" style="margin:2rem 0; display:flex; gap:1rem; background: #eee; padding: 1rem; border-radius: 8px;">
         <button type="button" onclick="printGraphic()">Grafik drucken (Querformat)</button>
         <button type="button" onclick="printTable()">Tabelle drucken (Hochformat)</button>
+        <button type="button" onclick="printSupport()">Begleitmedikation drucken</button>
     </div>
 
     <div id="table-container">
         <h2 class="no-print">Tabellarische Übersicht (alle Zyklen)</h2>
         <div id="table"></div>
+        <div id="supportPlan"></div>
     </div>
     <div id="print-footer" class="print-footer">
       <hr>
@@ -514,14 +541,35 @@
 
 <script>
 const schemas = JSON.parse(document.getElementById("schemas").textContent);
-// const schemaSelect = document.getElementById("schemaSelect");
-// Object.entries(schemas).forEach(([key, schema]) => {
-//   const opt = document.createElement("option");
-//   opt.value = key; opt.textContent = schema.label;
-//   schemaSelect.appendChild(opt);
-// });
 const schemaInput = document.getElementById("schemaInput");
 const schemaList = document.getElementById("schemaList");
+
+const supportEl = document.getElementById("supportPlan");
+const supportSelect = document.getElementById("supportSelect");
+const supportFollowUpSelect = document.getElementById("supportFollowUpSelect");
+const supportFollowUpWrapper = document.getElementById("supportFollowUpWrapper");
+
+const supportSchemas = {
+  "Akynzeo_Olanzapin": {
+    label: "Akynzeo – Olanzapin",
+    version: "v1.0 – 01/2026",
+    days: [
+      { day: 1, meds: [
+        { name: "Akynzeo 300/0,5 mg", dosage: "1-0-0", note: "morgens" },
+        { name: "Olanzapin 5 mg", dosage: "1-0-0", note: "morgens" }
+      ]},
+      { day: 2, meds: [
+        { name: "Olanzapin 5 mg", dosage: "0-0-1", note: "abends" }
+      ]},
+      { day: 3, meds: [
+        { name: "Olanzapin 5 mg", dosage: "0-0-1", note: "abends" }
+      ]},
+      { day: 4, meds: [
+        { name: "Olanzapin 5 mg", dosage: "0-0-1", note: "abends" }
+      ]}
+    ]
+  }
+};
 
 Object.entries(schemas).forEach(([key, schema]) => {
   const option = document.createElement("option");
@@ -530,9 +578,31 @@ Object.entries(schemas).forEach(([key, schema]) => {
   schemaList.appendChild(option);
 });
 
+Object.entries(supportSchemas).forEach(([key, schema]) => {
+  const opt = document.createElement("option");
+  opt.value = key;
+  opt.textContent = schema.label;
+  supportSelect.appendChild(opt);
+
+  const opt2 = document.createElement("option");
+  opt2.value = key;
+  opt2.textContent = schema.label;
+  supportFollowUpSelect.appendChild(opt2);
+});
+
 const hasFollowUpEl = document.getElementById("hasFollowUp");
 const followUpWrapper = document.getElementById("followUpWrapper");
 const followUpSelect = document.getElementById("followUpSelect");
+function updateFollowUpVisibility() {
+  const show = hasFollowUpEl.checked;
+  followUpWrapper.style.display = show ? "block" : "none";
+  supportFollowUpWrapper.style.display = show ? "block" : "none";
+}
+
+hasFollowUpEl.addEventListener("change", updateFollowUpVisibility);
+
+// Initial einmal ausführen
+updateFollowUpVisibility();
 
 Object.entries(schemas).forEach(([key, schema]) => {
   const opt = document.createElement("option");
@@ -541,9 +611,7 @@ Object.entries(schemas).forEach(([key, schema]) => {
   followUpSelect.appendChild(opt);
 });
 
-hasFollowUpEl.addEventListener("change", () => {
-  followUpWrapper.style.display = hasFollowUpEl.checked ? "block" : "none";
-});
+
 
 const formEl = document.getElementById("therapyForm");
 const vornameEl = document.getElementById("vorname");
@@ -673,25 +741,6 @@ function renderLegend(schema){
     `<div class="legend">${items.join("")}</div>${infoText}`;
 }
 
-// function renderGraphicOneCycle(cycle){
-//   let html = `<div class="weekday-header">` + cycle.days.slice(0,7).map(d => `<div>${weekdays[d.date.getDay()]}</div>`).join("") + `</div>`;
-//   html += `<div class="grid">` + cycle.days.map(d => {
-//     const cls = (isWeekend(d.date) ? "weekend " : "") + (isNRWHoliday(d.date) ? "holiday" : "");
-//     let content = "";
-//     const therapies = d.events.filter(ev => ev.type === "therapy");
-//     if (therapies.length > 0) {
-//         content += `<div class="therapy-bars">` + therapies.map(t => `<div class="bar" style="background:${t.color}">${t.short}</div>`).join("") + `</div>`;
-//     }
-//     d.events.forEach(ev => {
-//       if(ev.type === "injection") content += `<div class="icon-block"><div class="icon">💉</div><div class="icon-label">${ev.label}</div></div>`;
-//       if(ev.type === "lab") content += `<div class="icon-block"><div class="icon">🩸</div><div class="icon-label">${ev.label}</div></div>`;
-//     });
-//     const label = (d.day === 1 || d.day === 8) ? `<div class="day-label">d${d.day}</div>` : "";
-//     return `<div class="day ${cls}">${content}${label}</div>`;
-//   }).join("") + `</div>`;
-//   graphicEl.innerHTML = html;
-// }
-
 function renderGraphicOneCycle(cycle, targetEl){
   let html = `<div class="weekday-header">` +
     cycle.days.slice(0,7)
@@ -802,6 +851,62 @@ function renderTableAllCycles(cycles, followUpLabel = null, mainCycleCount = nul
   tableEl.innerHTML = html;
 }
 
+function renderSupportPlan(startDate, schema, titleText) {
+
+  let html = `
+    <div style="margin-top:2rem;">
+      <h2>Begleitmedikationsplan – ${schema.label}</h2>
+      <p>
+        <strong>Therapie:</strong> ${titleText}<br>
+        <strong>Gültig ab:</strong> ${fmt(startDate)}<br>
+        <strong>Version:</strong> ${schema.version}
+      </p>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Datum</th>
+          <th>Wochentag</th>
+          <th>Medikation</th>
+          <th>Dosierung</th>
+          <th>Hinweis</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  schema.days.forEach(d => {
+    const date = addDays(startDate, d.day - 1);
+    const weekday = weekdays[date.getDay()];
+
+    d.meds.forEach(med => {
+      html += `
+        <tr>
+          <td>${fmt(date)}</td>
+          <td>${weekday}</td>
+          <td>${med.name}</td>
+          <td>${med.dosage}</td>
+          <td>${med.note || ""}</td>
+        </tr>
+      `;
+    });
+  });
+
+  html += `
+      </tbody>
+    </table>
+
+    <div style="margin-top:1rem; font-size:0.9rem;">
+      <strong>Notfallhinweis:</strong><br>
+      Bei Fieber >38°C, anhaltendem Erbrechen oder Unsicherheit bitte sofort melden.<br>
+      GynOnko Ambulanz: 0241/6006-1685
+    </div>
+  `;
+
+  supportEl.innerHTML = html;
+}
+
 /* ===== DRUCK-FUNKTIONEN ===== */
 function printGraphic() {
   document.body.classList.remove("print-table");
@@ -815,33 +920,12 @@ function printTable() {
   setTimeout(() => window.print(), 50);
 }
 
-// formEl.addEventListener("submit", (e)=>{
-//   e.preventDefault();
-//   const geburt = geburtEl.value.trim();
-//   if (!isValidBirthdate(geburt)) { alert("Geburtsdatum prüfen!"); return; }
-  
-//   const startDate = new Date(startEl.value + 'T12:00:00');
-//   if (!isWorkday(startDate)){ alert("Startdatum muss ein Arbeitstag sein!"); return; }
+function printSupport() {
+  document.body.classList.remove("print-graphic","print-table");
+  document.body.classList.add("print-support");
+  setTimeout(() => window.print(), 50);
+}
 
-//   const schema = schemas[schemaSelect.value];
-//   const cycles = buildCycles(startDate, schema);
-
-//   patientEl.innerHTML = `
-//     <div style="border-bottom: 2px solid #333; margin-bottom: 20px; padding-bottom: 10px;">
-//       <h2 style="margin:0; color:#2563eb; font-size: 1.6rem;">Therapieplan: ${schema.label}</h2>
-//       <p style="margin:5px 0; font-size: 1.1rem;">
-//         <strong>Patient:</strong> ${vornameEl.value} ${nachnameEl.value} | 
-//         <strong>Geburtsdatum:</strong> ${geburt || "—"}<br>
-//         <small>Erstellt am: ${new Date().toLocaleDateString("de-DE")}</small>
-//       </p>
-//     </div>`;
-
-//   renderGraphicOneCycle(cycles[0]);
-//   renderLegend(schema);
-//   renderTableAllCycles(cycles);
-//   planEl.style.display = "block";
-//   planEl.scrollIntoView({ behavior: 'smooth' });
-// });
 
 formEl.addEventListener("submit", (e)=>{
   e.preventDefault();
@@ -852,7 +936,6 @@ formEl.addEventListener("submit", (e)=>{
   if (!isWorkday(startDate)){ alert("Startdatum muss ein Arbeitstag sein!"); return; }
 
   const selected = Object.entries(schemas).find(
-    // ([key, schema]) => schema.label === schemaInput.value
     ([key, schema]) => schema.label.toLowerCase().includes(schemaInput.value.toLowerCase())
   );
 
@@ -862,7 +945,7 @@ formEl.addEventListener("submit", (e)=>{
   }
 
   const [schemaKey, schema] = selected;  
-  // const schema = selected;
+
   const hasFollowUp = hasFollowUpEl.checked;
 
   let cyclesMain = buildCycles(startDate, schema, !hasFollowUp);
@@ -894,9 +977,8 @@ formEl.addEventListener("submit", (e)=>{
 
     renderGraphicOneCycle(cyclesFollow[0], secondGraphic);
   }
-
-
   // Der Patientenkopf enthält nun explizit das Schema als Titel
+
 // Titel dynamisch zusammensetzen
 let titleText = schema.label;
 
@@ -934,6 +1016,16 @@ patientEl.innerHTML = `
   } else {
     renderTableAllCycles(allCycles);
   }
+  supportEl.innerHTML = "";
+
+  if (supportSelect.value && supportSchemas[supportSelect.value]) {
+    renderSupportPlan(
+      startDate,
+      supportSchemas[supportSelect.value],
+      titleText
+    );
+  }
+
   planEl.style.display = "block";
   planEl.scrollIntoView({ behavior: 'smooth' });
 });
