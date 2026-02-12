@@ -65,6 +65,22 @@
     box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
   }
 
+  form select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    background-image:
+      linear-gradient(45deg, transparent 50%, #6b7280 50%),
+      linear-gradient(135deg, #6b7280 50%, transparent 50%);
+    background-position:
+      calc(100% - 20px) calc(50% - 3px),
+      calc(100% - 15px) calc(50% - 3px);
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+
+    padding-right: 2.2rem;
+  }
   /* Button volle Breite */
   form button {
     grid-column: 1 / -1;
@@ -109,7 +125,7 @@
     border-radius: 8px;
     min-height: 110px;
     padding: 10px 5px; /* Etwas mehr vertikaler Platz */
-    background: #f9fafb;
+    background: #ecedef;
     position: relative;
     display: flex;
     /* Dies zentriert die Balken und Icons horizontal als Gruppe */
@@ -118,7 +134,7 @@
     gap: 12px; /* Abstand zwischen Balken und Icons */
   }
 
-  .day.weekend{ background:#e5e7eb; }
+  .day.weekend{ background:#c4c6ca; }
   .day.holiday{ outline:2px solid #2563eb; outline-offset:-2px; }
   
   .therapy-bars {
@@ -142,6 +158,7 @@
     writing-mode: vertical-rl; 
     text-orientation: upright;
     padding: 4px 0;
+
   }
 
   .day-content {
@@ -263,6 +280,12 @@
       text-align: left;
     }
 
+    .gcsf-row {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.4rem 1.8rem;
+    }
   /* ===== DRUCK-LOGIK ===== */
   @media print {
 
@@ -399,23 +422,26 @@
       G-CSF Gabe?
     </label>
 
-    <label id="gcsfWrapper" style="display:none; grid-column: 1 / -1;">
-      Präparat auswählen:
-      <select id="gcsfSelect">
-        <option value="Pegfilgrastim" selected>Pegfilgrastim</option>
-        <option value="Lipegfilgrastim">Lipegfilgrastim</option>
-        <option value="Efbemalenograstim">Efbemalenograstim</option>
-        <option value="Filgrastim">Filgrastim</option>
-      </select>
-    </label>
+    <div class="gcsf-row" id="gcsfRow" style="display:none;">
+      <label id="gcsfWrapper">
+        Präparat auswählen:
+        <select id="gcsfSelect">
+          <option value="Pegfilgrastim" selected>Pegfilgrastim</option>
+          <option value="Lipegfilgrastim">Lipegfilgrastim</option>
+          <option value="Efbemalenograstim">Efbemalenograstim</option>
+          <option value="Filgrastim">Filgrastim</option>
+        </select>
+      </label>
 
-    <label id="gcsfDayWrapper" style="display:none; grid-column: 1 / -1;">
-      Applikationstag:
-      <select id="gcsfDay">
-        <option value="2">d2</option>
-        <option value="3">d3</option>
-      </select>
-    </label>
+      <label id="gcsfDayWrapper">
+        Applikationstag:
+        <select id="gcsfDay">
+          <option value="2">d2</option>
+          <option value="3">d3</option>
+        </select>
+      </label>
+    </div>
+
     <label style="grid-column: 1 / -1;">    
       <input type="checkbox" id="hasFollowUp">
       Anschlusstherapie?
@@ -430,6 +456,30 @@
       Begleitmedikation Folgetherapie:
       <select id="supportFollowUpSelect"></select>
     </label>
+    <label id="gcsfFollowUpToggle" style="display:none; grid-column: 1 / -1;">
+      <input type="checkbox" id="gcsfEnabledFollow">
+      G-CSF Gabe (Folgetherapie)?
+    </label>
+
+    <div class="gcsf-row" id="gcsfRowFollow" style="display:none;">
+      <label>
+        Präparat auswählen:
+        <select id="gcsfSelectFollow">
+          <option value="Pegfilgrastim" selected>Pegfilgrastim</option>
+          <option value="Lipegfilgrastim">Lipegfilgrastim</option>
+          <option value="Efbemalenograstim">Efbemalenograstim</option>
+          <option value="Filgrastim">Filgrastim</option>
+        </select>
+      </label>
+
+      <label id="gcsfDayWrapperFollow">
+        Applikationstag:
+        <select id="gcsfDayFollow">
+          <option value="2">d2</option>
+          <option value="3">d3</option>
+        </select>
+      </label>
+    </div>
     <button type="submit">Plan berechnen</button>
   </form>
 
@@ -471,8 +521,8 @@
     "anzahl_zyklen": 4,
     "default_gcsf": true,
     "events": [
-      { "type": "therapy", "drug": "Epirubicin", "short": "E", "color": "#2563eb", "day": 1 },
-      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "color": "#b91c1c", "day": 1 },
+      { "type": "therapy", "drug": "Epirubicin", "short": "E", "day": 1 },
+      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "day": 1 },
       { "type": "lab", "label": "Labor", "day": 8 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
     ]
@@ -482,8 +532,8 @@
     "zyklus_tage": 21,
     "anzahl_zyklen": 4,
     "events": [
-      { "type": "therapy", "drug": "Epirubicin", "short": "E", "color": "#2563eb", "day": 1 },
-      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "color": "#b91c1c", "day": 1 },
+      { "type": "therapy", "drug": "Epirubicin", "short": "E", "day": 1 },
+      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "day": 1 },
       { "type": "lab", "label": "Labor", "day": 8 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
     ]
@@ -493,7 +543,7 @@
     "zyklus_tage": 7,
     "anzahl_zyklen": 12,
     "events": [
-      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "color": "#059669", "day": 1 },
+      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "day": 1 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
     ]
   },
@@ -502,10 +552,10 @@
     "zyklus_tage": 21,
     "anzahl_zyklen": 4,
     "events": [
-      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "color": "#059669", "day": 1 },    
-      { "type": "therapy", "drug": "Pembrolizumab", "short": "Pem", "color": "#8b5cf6", "day": 1 },      
-      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "color": "#059669", "day": 8 },
-      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "color": "#059669", "day": 15 },         
+      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "day": 1 },    
+      { "type": "therapy", "drug": "Pembrolizumab", "short": "Pem", "day": 1 },      
+      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "day": 8 },
+      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac","day": 15 },         
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 7 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 12 }
@@ -516,9 +566,9 @@
     "zyklus_tage": 21,
     "anzahl_zyklen": 4,
     "events": [
-      { "type": "therapy", "drug": "Epirubicin", "short": "E", "color": "#2563eb", "day": 1 },
-      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "color": "#b91c1c", "day": 1 },
-      { "type": "therapy", "drug": "Pembrolizumab", "short": "Pem", "color": "#8b5cf6", "day": 1 },      
+      { "type": "therapy", "drug": "Epirubicin", "short": "E", "day": 1 },
+      { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "day": 1 },
+      { "type": "therapy", "drug": "Pembrolizumab", "short": "Pem", "day": 1 },      
       { "type": "lab", "label": "Labor", "day": 8 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
     ]
@@ -529,10 +579,10 @@
     "anzahl_zyklen": 6,
     "default_gcsf": true,
     "events": [
-      { "type": "therapy", "drug": "Docetaxel", "short": "T", "color": "#059669", "day": 1 },    
-      { "type": "therapy", "drug": "Carboplatin", "short": "Cb", "color": "#f59e0b", "day": 1 },      
-      { "type": "therapy", "drug": "Trastuzumab", "short": "Her", "color": "#7c3aed", "day": 1 },
-      { "type": "therapy", "drug": "Pertuzumab", "short": "Per", "color": "#c026d3", "day": 1 },     
+      { "type": "therapy", "drug": "Docetaxel", "short": "T", "day": 1 },    
+      { "type": "therapy", "drug": "Carboplatin", "short": "Cb", "day": 1 },      
+      { "type": "therapy", "drug": "Trastuzumab", "short": "Her", "day": 1 },
+      { "type": "therapy", "drug": "Pertuzumab", "short": "Per", "day": 1 },     
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 },
       { "type": "lab", "label": "Labor", "day": 8 }
     ]
@@ -542,11 +592,11 @@
     "zyklus_tage": 21,
     "anzahl_zyklen": 4,
     "events": [
-      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "color": "#059669", "day": 1 },    
-      { "type": "therapy", "drug": "Trastuzumab", "short": "Her", "color": "#7c3aed", "day": 1 },
-      { "type": "therapy", "drug": "Pertuzumab", "short": "Per", "color": "#c026d3", "day": 1 },  
-      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "color": "#059669", "day": 8 },
-      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "color": "#059669", "day": 15 },         
+      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "day": 1 },    
+      { "type": "therapy", "drug": "Trastuzumab", "short": "Her", "day": 1 },
+      { "type": "therapy", "drug": "Pertuzumab", "short": "Per", "day": 1 },  
+      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "day": 8 },
+      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "day": 15 },         
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 7 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 12 }
@@ -557,8 +607,8 @@
     "zyklus_tage": 7,
     "anzahl_zyklen": 12,
     "events": [
-      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "color": "#059669", "day": 1 },
-      { "type": "therapy", "drug": "Trastuzumab", "short": "Her", "color": "#7c3aed", "day": 1 },
+      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "day": 1 },
+      { "type": "therapy", "drug": "Trastuzumab", "short": "Her", "day": 1 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
     ]
   }
@@ -602,17 +652,59 @@ const supportSchemas = {
     ]
   }
 };
+const drugColorRegistry = {
 
+  // Taxane
+  "Paclitaxel": "#059669",              // sattes Grün
+  "Nab-Paclitaxel": "#047857",          // dunkleres Grün
+  "Docetaxel": "#0d9488",               // Petrol
+
+  // Anthrazyklin
+  "Epirubicin": "#2563eb",              // kräftiges Blau
+
+  // Alkylanzien
+  "Cyclophosphamid": "#b91c1c",         // tiefes Rot
+
+  // Platin
+  "Carboplatin": "#f59e0b",             // warmes Amber
+  "Cisplatin": "#d97706",               // dunkleres Amber
+
+  // HER2-Antikörper
+  "Trastuzumab": "#7c3aed",             // klares Lila
+  "Pertuzumab": "#a21caf",              // Magenta-Lila
+  "T-DM1": "#be185d",                   // dunkles Pink
+  "Trastuzumab-Deruxtecan": "#9d174d",  // Burgunder
+
+  // Immuntherapie
+  "Pembrolizumab": "#8b5cf6",           // Violett
+
+  // ADC / neuere Substanzen
+  "Mirvetuximab Soravtansin": "#0891b2",   // Cyan
+  "Sacituzumab Govitecan": "#0ea5e9",      // helleres Cyan
+
+  // Weitere Zytostatika
+  "Eribulin": "#4b5563",               // kühles Grau
+  "Trabectedin": "#374151",            // dunkles Grau
+  "Methotrexat": "#65a30d"             // Olivgrün
+};
 const gcsfEnabledEl = document.getElementById("gcsfEnabled");
 const gcsfWrapper = document.getElementById("gcsfWrapper");
 const gcsfSelect = document.getElementById("gcsfSelect");
 const gcsfDayWrapper = document.getElementById("gcsfDayWrapper");
 
-function updateGcsfVisibility() {
-  const show = gcsfEnabledEl.checked;
-  gcsfWrapper.style.display = show ? "block" : "none";
+const gcsfEnabledFollowEl = document.getElementById("gcsfEnabledFollow");
+const gcsfSelectFollow = document.getElementById("gcsfSelectFollow");
+const gcsfDayWrapperFollow = document.getElementById("gcsfDayWrapperFollow");
+const gcsfRowFollow = document.getElementById("gcsfRowFollow");
+const gcsfFollowUpToggle = document.getElementById("gcsfFollowUpToggle");
 
-  // Filgrastim = mehrtägig → kein fixer d2/d3 Tag
+function updateGcsfVisibility() {
+
+  const show = gcsfEnabledEl.checked;
+
+  const gcsfRow = document.getElementById("gcsfRow");
+  gcsfRow.style.display = show ? "grid" : "none";
+
   const isFilgrastim = gcsfSelect.value === "Filgrastim";
 
   gcsfDayWrapper.style.display =
@@ -621,7 +713,8 @@ function updateGcsfVisibility() {
 
 gcsfEnabledEl.addEventListener("change", updateGcsfVisibility);
 gcsfSelect.addEventListener("change", updateGcsfVisibility);
-
+gcsfEnabledFollowEl.addEventListener("change", updateGcsfFollowVisibility);
+gcsfSelectFollow.addEventListener("change", updateGcsfFollowVisibility);
 updateGcsfVisibility();
 
 Object.entries(schemas).forEach(([key, schema]) => {
@@ -649,6 +742,10 @@ schemaInput.addEventListener("change", () => {
   gcsfEnabledEl.checked = !!schema.default_gcsf;
 
   updateGcsfVisibility();
+  if (hasFollowUpEl.checked) {
+    gcsfEnabledFollowEl.checked = !!schema.default_gcsf;
+    updateGcsfFollowVisibility();
+  }  
 });
 
 Object.entries(supportSchemas).forEach(([key, schema]) => {
@@ -667,11 +764,32 @@ const hasFollowUpEl = document.getElementById("hasFollowUp");
 const followUpWrapper = document.getElementById("followUpWrapper");
 const followUpSelect = document.getElementById("followUpSelect");
 function updateFollowUpVisibility() {
+
   const show = hasFollowUpEl.checked;
+
   followUpWrapper.style.display = show ? "block" : "none";
   supportFollowUpWrapper.style.display = show ? "block" : "none";
-}
+  gcsfFollowUpToggle.style.display = show ? "block" : "none";
 
+  if (!show) {
+    gcsfRowFollow.style.display = "none";
+    gcsfEnabledFollowEl.checked = false;
+  } else {
+    gcsfRowFollow.style.display =
+      gcsfEnabledFollowEl.checked ? "grid" : "none";
+  }
+}
+function updateGcsfFollowVisibility() {
+
+  const show = gcsfEnabledFollowEl.checked;
+
+  gcsfRowFollow.style.display = show ? "grid" : "none";
+
+  const isFilgrastim = gcsfSelectFollow.value === "Filgrastim";
+
+  gcsfDayWrapperFollow.style.display =
+    show && !isFilgrastim ? "block" : "none";
+}
 hasFollowUpEl.addEventListener("change", updateFollowUpVisibility);
 
 // Initial einmal ausführen
@@ -788,7 +906,7 @@ function renderLegend(schema){
   Object.values(uniqueTherapies).forEach(t => {
     items.push(`
       <div class="legend-item">
-        <div class="legend-bar" style="background:${t.color}"></div>
+        <div class="legend-bar" style="background:${getDrugColor(t.drug)}"></div>
         <span>${t.drug}</span>
       </div>
     `);
@@ -824,6 +942,10 @@ function renderLegend(schema){
   return `<div class="legend">${items.join("")}</div>${infoText}`;
 }
 
+function getDrugColor(drug){
+  return drugColorRegistry[drug] || "#6b7280";
+}
+
 function renderGraphicOneCycle(cycle, targetEl){
   let html = `<div class="weekday-header">` +
     cycle.days.slice(0,7)
@@ -842,7 +964,7 @@ function renderGraphicOneCycle(cycle, targetEl){
     if (therapies.length > 0) {
       barHtml = `<div class="therapy-bars">` +
         therapies.map(t =>
-          `<div class="bar" style="background:${t.color}">${t.short}</div>`
+          `<div class="bar" style="background:${getDrugColor(t.drug)}">${t.short}</div>`
         ).join("") +
       `</div>`;
     }
@@ -942,7 +1064,8 @@ function renderSupportPlan(
   mainCycleCount = null,
   followLabel = null,
   followSupportSchema = null,
-  gcsfConfig = null
+  gcsfConfigMain = null,
+  gcsfConfigFollow = null
 ) {
   let graphicHtml = "";
 
@@ -955,6 +1078,11 @@ function renderSupportPlan(
     }
 
     let currentSupportSchema = mainSupportSchema;
+    let currentGcsfConfig = gcsfConfigMain;
+
+    if (mainCycleCount && idx >= mainCycleCount) {
+      currentGcsfConfig = gcsfConfigFollow;
+    }
     if (mainCycleCount && followSupportSchema && idx >= mainCycleCount) {
       currentSupportSchema = followSupportSchema;
     }
@@ -976,16 +1104,19 @@ function renderSupportPlan(
     });
 
     // Wochen aus G-CSF
-    if (gcsfConfig) {
-      if (gcsfConfig.multipleDays) {
-        gcsfConfig.multipleDays.forEach(d => {
+    if (currentGcsfConfig) {
+
+      if (currentGcsfConfig.multipleDays) {
+        currentGcsfConfig.multipleDays.forEach(d => {
           const weekIndex = Math.floor((d - 1) / 7);
           weeksToRender.add(weekIndex);
         });
-      } else if (gcsfConfig.day) {
-        const weekIndex = Math.floor((gcsfConfig.day - 1) / 7);
+      } 
+      else if (currentGcsfConfig.day) {
+        const weekIndex = Math.floor((currentGcsfConfig.day - 1) / 7);
         weeksToRender.add(weekIndex);
       }
+
     }
 
     const sortedWeeks = Array.from(weeksToRender).sort((a, b) => a - b);
@@ -1064,14 +1195,15 @@ function renderSupportPlan(
         }
 
         // 🔷 G-CSF Integration (HIER gehört es hin)
-        if (gcsfConfig) {
+        if (currentGcsfConfig) {
 
           let gcsfMatch = false;
 
-          if (gcsfConfig.multipleDays) {
-            gcsfMatch = gcsfConfig.multipleDays.includes(dayObj.day);
-          } else if (gcsfConfig.day) {
-            gcsfMatch = dayObj.day === gcsfConfig.day;
+          if (currentGcsfConfig.multipleDays) {
+            gcsfMatch = currentGcsfConfig.multipleDays.includes(dayObj.day);
+          } 
+          else if (currentGcsfConfig.day) {
+            gcsfMatch = dayObj.day === currentGcsfConfig.day;
           }
 
           if (gcsfMatch) {
@@ -1084,7 +1216,7 @@ function renderSupportPlan(
                 font-size:0.8rem;
                 box-shadow:0 1px 3px rgba(0,0,0,0.05);
               ">
-                <strong>${gcsfConfig.drug}</strong><br>
+                <strong>${currentGcsfConfig.drug}</strong><br> 
                 Injektion
               </div>
             `;
@@ -1214,8 +1346,11 @@ formEl.addEventListener("submit", (e)=>{
      G-CSF KONFIGURATION BAUEN
   ============================== */
 
-  let gcsfConfig = null;
-  let gcsfEvents = [];
+  let gcsfConfigMain = null;
+  let gcsfEventsMain = [];
+
+  let gcsfConfigFollow = null;
+  let gcsfEventsFollow = [];
 
   // // Default aus Schema übernehmen
   // gcsfEnabledEl.checked = !!schema.default_gcsf;
@@ -1226,15 +1361,12 @@ formEl.addEventListener("submit", (e)=>{
     const drug = gcsfSelect.value;
 
     if (drug === "Filgrastim") {
-      const days = [2,3,4,5,6];
 
-      gcsfConfig = {
-        drug,
-        multipleDays: days
-      };
+      const days = [2,3,4,5,6];
+      gcsfConfigMain = { drug, multipleDays: days };
 
       days.forEach(d => {
-        gcsfEvents.push({
+        gcsfEventsMain.push({
           type: "injection",
           label: drug,
           day: d
@@ -1244,13 +1376,39 @@ formEl.addEventListener("submit", (e)=>{
     } else {
 
       const day = parseInt(gcsfDay.value);
+      gcsfConfigMain = { drug, day };
 
-      gcsfConfig = {
-        drug,
+      gcsfEventsMain.push({
+        type: "injection",
+        label: drug,
         day
-      };
+      });
+    }
+  }
 
-      gcsfEvents.push({
+  if (gcsfEnabledFollowEl.checked) {
+
+    const drug = gcsfSelectFollow.value;
+
+    if (drug === "Filgrastim") {
+
+      const days = [2,3,4,5,6];
+      gcsfConfigFollow = { drug, multipleDays: days };
+
+      days.forEach(d => {
+        gcsfEventsFollow.push({
+          type: "injection",
+          label: drug,
+          day: d
+        });
+      });
+
+    } else {
+
+      const day = parseInt(gcsfDayFollow.value);
+      gcsfConfigFollow = { drug, day };
+
+      gcsfEventsFollow.push({
         type: "injection",
         label: drug,
         day
@@ -1264,8 +1422,8 @@ formEl.addEventListener("submit", (e)=>{
 
   const extendedSchema = JSON.parse(JSON.stringify(schema));
 
-  if (gcsfEvents.length > 0) {
-    extendedSchema.events.push(...gcsfEvents);
+  if (gcsfEventsMain.length > 0) {
+    extendedSchema.events.push(...gcsfEventsMain);
   }
 
   let cyclesMain = buildCycles(
@@ -1282,11 +1440,16 @@ formEl.addEventListener("submit", (e)=>{
 
   let followSchema = null;
   let followSupportSchema = null;
+  let extendedFollowSchema = null;
 
   if (hasFollowUp) {
 
     followSchema = schemas[followUpSelect.value];
-
+    extendedFollowSchema = JSON.parse(JSON.stringify(followSchema));
+    
+    if (gcsfEventsFollow.length > 0) {
+      extendedFollowSchema.events.push(...gcsfEventsFollow);
+    }
     const followStart = addDays(
       startDate,
       schema.zyklus_tage * schema.anzahl_zyklen
@@ -1294,7 +1457,7 @@ formEl.addEventListener("submit", (e)=>{
 
     const cyclesFollow = buildCycles(
       followStart,
-      followSchema,
+      extendedFollowSchema,
       false
     );
 
@@ -1332,8 +1495,7 @@ formEl.addEventListener("submit", (e)=>{
       schema.zyklus_tage * schema.anzahl_zyklen
     );
 
-    const cyclesFollow = buildCycles(followStart, followSchema, false);
-
+    const cyclesFollow = buildCycles(followStart, extendedFollowSchema, false);
     renderGraphicOneCycle(cyclesFollow[0], secondGraphic);
 
     const followLegendWrapper = document.createElement("div");
@@ -1406,7 +1568,8 @@ formEl.addEventListener("submit", (e)=>{
       cyclesMain.length,
       hasFollowUp ? followSchema.label : null,
       followSupportSchema,
-      gcsfConfig
+      gcsfConfigMain,
+      gcsfConfigFollow
     );
   }
 
