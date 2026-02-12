@@ -425,6 +425,7 @@
     <div id="table-container">
         <h2 class="no-print">Tabellarische Übersicht (alle Zyklen)</h2>
         <div id="table"></div>
+        <div id="supportGraphic"></div>
         <div id="supportPlan"></div>
     </div>
     <div id="print-footer" class="print-footer">
@@ -545,6 +546,7 @@ const schemaInput = document.getElementById("schemaInput");
 const schemaList = document.getElementById("schemaList");
 
 const supportEl = document.getElementById("supportPlan");
+const supportGraphicEl = document.getElementById("supportGraphic");
 const supportSelect = document.getElementById("supportSelect");
 const supportFollowUpSelect = document.getElementById("supportFollowUpSelect");
 const supportFollowUpWrapper = document.getElementById("supportFollowUpWrapper");
@@ -815,7 +817,7 @@ function renderTableAllCycles(cycles, followUpLabel = null, mainCycleCount = nul
 
       let hint = "";
       if (isNRWHoliday(d.date)) hint = "⚠️ Feiertag";
-      else if (isWeekend(d.date)) hint = "⚠️ WE";
+      else if (isWeekend(d.date)) hint = "⚠️ Wochenende";
 
       html += `
         <tr>
@@ -851,14 +853,104 @@ function renderTableAllCycles(cycles, followUpLabel = null, mainCycleCount = nul
   tableEl.innerHTML = html;
 }
 
-function renderSupportPlan(startDate, schema, titleText) {
+function renderSupportPlan(cycles, schema, titleText, therapyLabel) {
+  let graphicHtml = "";
+
+  cycles.forEach(cycle => {
+    graphicHtml += `
+      <div style="margin-top:2rem;">
+        <h2>Zyklus ${cycle.index} ${therapyLabel}:</h2>
+      </div>
+    `;
+
+    const totalDays = cycle.days.length;
+
+    // Welche Wochen enthalten Begleitmedikation?
+    const weeksToRender = new Set();
+    schema.days.forEach(supportDay => {
+      const weekIndex = Math.floor((supportDay.day - 1) / 7);
+      weeksToRender.add(weekIndex);
+    });
+
+    const sortedWeeks = Array.from(weeksToRender).sort((a, b) => a - b);
+
+    sortedWeeks.forEach(w => {
+      graphicHtml += `
+        <div style="
+          display:grid;
+          grid-template-columns:repeat(7,1fr);
+          gap:10px;
+          margin-bottom:1.5rem;
+        ">
+      `;
+
+      for (let i = 0; i < 7; i++) {
+        const dayIndex = w * 7 + i;
+        if (dayIndex >= totalDays) break;
+
+        const dayObj = cycle.days[dayIndex];
+        const date = dayObj.date;
+        const weekday = weekdays[date.getDay()];
+
+        const isWeekendDay = isWeekend(date);
+        const isHolidayDay = isNRWHoliday(date);
+
+        let warningIcon = "";
+        if (isHolidayDay) warningIcon = " ⚠️ Feiertag";
+        else if (isWeekendDay) warningIcon = " ⚠️ Wochenende";
+
+        graphicHtml += `
+          <div style="
+            border:1px solid #e5e7eb;
+            border-radius:12px;
+            padding:10px;
+            background:${isWeekendDay || isHolidayDay ? '#f3f4f6' : '#f9fafb'};
+            min-height:120px;
+          ">
+            <div style="font-weight:700; margin-bottom:6px; font-size:0.85rem;">
+              ${fmt(date)}<br>
+              <span style="font-weight:500; font-size:0.75rem; color:#6b7280;">
+                ${weekday} (d${dayObj.day})${warningIcon}
+              </span>
+            </div>
+        `;
+
+        const supportDay = schema.days.find(d => d.day === dayObj.day);
+
+        if (supportDay) {
+          supportDay.meds.forEach(med => {
+            graphicHtml += `
+              <div style="
+                margin-bottom:6px;
+                padding:6px;
+                background:white;
+                border-radius:8px;
+                font-size:0.8rem;
+                box-shadow:0 1px 3px rgba(0,0,0,0.05);
+              ">
+                <strong>${med.name}</strong><br>
+                ${med.dosage}${med.note ? ' – ' + med.note : ''}
+              </div>
+            `;
+          });
+        }
+
+        graphicHtml += `</div>`;
+      }
+
+      graphicHtml += `</div>`;
+    });
+  });
+
+  supportGraphicEl.innerHTML = graphicHtml;
+
+  /* ===== TABELLARISCHE ÜBERSICHT ===== */
 
   let html = `
     <div style="margin-top:2rem;">
       <h2>Begleitmedikationsplan – ${schema.label}</h2>
       <p>
         <strong>Therapie:</strong> ${titleText}<br>
-        <strong>Gültig ab:</strong> ${fmt(startDate)}<br>
         <strong>Version:</strong> ${schema.version}
       </p>
     </div>
@@ -868,6 +960,7 @@ function renderSupportPlan(startDate, schema, titleText) {
         <tr>
           <th>Datum</th>
           <th>Wochentag</th>
+          <th>Zyklus</th>
           <th>Medikation</th>
           <th>Dosierung</th>
           <th>Hinweis</th>
@@ -876,20 +969,26 @@ function renderSupportPlan(startDate, schema, titleText) {
       <tbody>
   `;
 
-  schema.days.forEach(d => {
-    const date = addDays(startDate, d.day - 1);
-    const weekday = weekdays[date.getDay()];
+  cycles.forEach(cycle => {
+    cycle.days.forEach(dayObj => {
+      const supportDay = schema.days.find(d => d.day === dayObj.day);
+      if (!supportDay) return;
 
-    d.meds.forEach(med => {
-      html += `
-        <tr>
-          <td>${fmt(date)}</td>
-          <td>${weekday}</td>
-          <td>${med.name}</td>
-          <td>${med.dosage}</td>
-          <td>${med.note || ""}</td>
-        </tr>
-      `;
+      const date = dayObj.date;
+      const weekday = weekdays[date.getDay()];
+
+      supportDay.meds.forEach(med => {
+        html += `
+          <tr>
+            <td>${fmt(date)}</td>
+            <td>${weekday}</td>
+            <td>${cycle.index}</td>
+            <td>${med.name}</td>
+            <td>${med.dosage}</td>
+            <td>${med.note || ''}</td>
+          </tr>
+        `;
+      });
     });
   });
 
@@ -1017,12 +1116,14 @@ patientEl.innerHTML = `
     renderTableAllCycles(allCycles);
   }
   supportEl.innerHTML = "";
+  supportGraphicEl.innerHTML = "";
 
   if (supportSelect.value && supportSchemas[supportSelect.value]) {
     renderSupportPlan(
-      startDate,
+      allCycles,
       supportSchemas[supportSelect.value],
-      titleText
+      titleText,
+      schema.label
     );
   }
 
