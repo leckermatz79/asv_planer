@@ -25,7 +25,7 @@
   /* Formular als sauberes Grid */
   form {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 1.4rem 1.8rem;
     align-items: start;
   }
@@ -83,7 +83,13 @@
     background:#2563eb; color:#fff; border:none; border-radius:8px;
     font-weight:600; cursor:pointer;
   }
+  .schema-field {
+    grid-column: span 2;
+  }
 
+  .start-field {
+    grid-column: span 1;
+  }
   .warning { color:#2563eb; font-weight:600; }
 
   /* ===== Grafik-Styles ===== */
@@ -167,6 +173,14 @@
     color: #9ca3af;
   }
 
+  .followup-separator td {
+    text-align: center;
+    font-weight: 700;
+    padding: 1rem;
+    background: #e0ecff;
+    border-top: 2px solid var(--primary);
+    border-bottom: 2px solid var(--primary);
+  }
   .legend { display:flex; flex-wrap:wrap; gap:16px; font-size:0.8rem; margin-top: 1rem; }
   .legend-item { display:flex; align-items:center; gap:8px; }
   .legend-bar { width:18px; height:18px; border-radius:4px; }
@@ -232,42 +246,106 @@
     padding-top: 8px;
     border-top: 1px solid #e5e7eb;
   }
+
+
+    /* Date-Input optisch an andere Felder angleichen */
+    form input[type="date"] {
+      height: auto;
+      line-height: 1.2;
+      padding: 0.75rem;
+    }
+    form input[type="date"]::-webkit-date-and-time-value {
+      text-align: left;
+    }
+
   /* ===== DRUCK-LOGIK ===== */
-  @page {
-    size: landscape;
+  @media print {
+
+  form,
+  .no-print,
+  h1#title {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    margin: 0;
+    padding: 0;
+  }
+
+  .container {
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .plan {
+    box-shadow: none;
+    border: none;
+    padding: 0;
+  }
+
+  /* Standard: alles verstecken */
+  #graphic,
+  #legend,
+  #table,
+  #print-footer {
+    display: none;
+  }
+
+  /* ===== Grafikdruck ===== */
+  body.print-graphic #graphic,
+  body.print-graphic #legend,
+  body.print-graphic #patient,
+  body.print-graphic #print-footer {
+    display: block !important;
+  }
+
+  body.print-graphic {
+    page: graphicPage;
+  }
+
+  @page graphicPage {
+    size: A4 landscape;
     margin: 10mm;
   }
-  @media print {
-    @page { size: A4 landscape; margin: 10mm; }
+
+  /* ===== Tabellendruck ===== */
+  body.print-table #table,
+  body.print-table #patient,
+  body.print-table #print-footer {
+    display: block !important;
+    font-size: 0.8rem;   /* vorher ~0.9rem */
+
   }
-  @media print {
-    form, button, h1, h2, .no-print { display: none !important; }
-    body { background: #fff; padding: 0; margin: 0; }
-    .container { max-width: 100%; width: 100%; margin: 0; }
-    .plan { box-shadow: none; padding: 0; border: none; }
 
-    /* Sichtbarkeit steuern */
-    #patient, #graphic, #legend, #table { display: none; }
-
-    body.print-graphic #patient,
-    body.print-graphic #graphic,
-    body.print-graphic #legend { 
-      display: block !important; 
-    }
-
-    body.print-table #patient,
-    body.print-table #table { 
-      display: block !important; 
-    }
-
-    /* Sicherstellen, dass Farben gedruckt werden (Safari/Webkit) */
-    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body.print-table {
+    page: tablePage;
   }
-  /* Safari Druck-Fix für Farben */
-  @media print {
-    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    .day { border: 1px solid #ccc !important; }
+
+  body.print-table th,
+  body.print-table td {
+    font-size: 0.8rem;
+    padding: 4px 6px;    /* etwas kompakter */
   }
+
+  @page tablePage {
+    size: A4 portrait;
+    margin: 15mm;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
 </style>
 </head>
 
@@ -281,12 +359,25 @@
     <label>Geburtsdatum (optional, TT.MM.JJJJ)
       <input id="geburt" placeholder="TT.MM.JJJJ">
     </label>
-    <label>Chemotherapie-Schema
+    <label class="schema-field">
+      Chemotherapie-Schema
       <input list="schemaList" id="schemaInput" required>
       <datalist id="schemaList"></datalist>
-    </label>    
-    <label>Startdatum Zyklus 1
+    </label>
+
+    <label class="start-field">
+      Startdatum Zyklus 1
       <input type="date" id="startdatum" required>
+    </label>
+
+    <label style="grid-column: 1 / -1;">    
+      <input type="checkbox" id="hasFollowUp">
+      Anschlusstherapie?
+    </label>
+
+    <label id="followUpWrapper" style="display:none; grid-column: 1 / -1;">
+      Folgetherapie auswählen:
+      <select id="followUpSelect"></select>
     </label>
     <button type="submit">Plan berechnen</button>
   </form>
@@ -439,6 +530,21 @@ Object.entries(schemas).forEach(([key, schema]) => {
   schemaList.appendChild(option);
 });
 
+const hasFollowUpEl = document.getElementById("hasFollowUp");
+const followUpWrapper = document.getElementById("followUpWrapper");
+const followUpSelect = document.getElementById("followUpSelect");
+
+Object.entries(schemas).forEach(([key, schema]) => {
+  const opt = document.createElement("option");
+  opt.value = key;
+  opt.textContent = schema.label;
+  followUpSelect.appendChild(opt);
+});
+
+hasFollowUpEl.addEventListener("change", () => {
+  followUpWrapper.style.display = hasFollowUpEl.checked ? "block" : "none";
+});
+
 const formEl = document.getElementById("therapyForm");
 const vornameEl = document.getElementById("vorname");
 const nachnameEl = document.getElementById("nachname");
@@ -489,25 +595,45 @@ function subtractWorkdays(date, n){
   return x;
 }
 
-function buildCycles(startDate, schema){
-  const cycles = [];  
+function buildCycles(startDate, schema, omitLastWorkdayLab=false){
+  const cycles = [];
+
   for (let c = 0; c < schema.anzahl_zyklen; c++){
     const cycleStart = addDays(startDate, c * schema.zyklus_tage);
     const nextCycleStart = addDays(cycleStart, schema.zyklus_tage);
+
     const days = Array.from({length: schema.zyklus_tage}, (_,i)=>({
-      day: i+1, date: addDays(cycleStart, i), events: []
+      day: i+1,
+      date: addDays(cycleStart, i),
+      events: []
     }));
+
     for (const ev of schema.events){
+
+      // Falls letzter Zyklus und keine Anschlusstherapie → letzte Labor weglassen
+      if (
+        omitLastWorkdayLab &&
+        c === schema.anzahl_zyklen - 1 &&
+        ev.workdays_before_next_cycle_start
+      ) continue;
+
       let dIdx = null;
-      if (typeof ev.day === "number") dIdx = ev.day;
+
+      if (typeof ev.day === "number")
+        dIdx = ev.day;
+
       if (typeof ev.workdays_before_next_cycle_start === "number") {
         const target = subtractWorkdays(nextCycleStart, ev.workdays_before_next_cycle_start);
         dIdx = Math.round((target - cycleStart) / MS_DAY) + 1;
       }
-      if (dIdx && dIdx >= 1 && dIdx <= schema.zyklus_tage) days[dIdx-1].events.push(ev);
+
+      if (dIdx && dIdx >= 1 && dIdx <= schema.zyklus_tage)
+        days[dIdx-1].events.push(ev);
     }
+
     cycles.push({ index: c+1, days });
   }
+
   return cycles;
 }
 
@@ -566,23 +692,35 @@ function renderLegend(schema){
 //   graphicEl.innerHTML = html;
 // }
 
-function renderGraphicOneCycle(cycle){
-  let html = `<div class="weekday-header">` + cycle.days.slice(0,7).map(d => `<div>${weekdays[d.date.getDay()]}</div>`).join("") + `</div>`;
+function renderGraphicOneCycle(cycle, targetEl){
+  let html = `<div class="weekday-header">` +
+    cycle.days.slice(0,7)
+      .map(d => `<div>${weekdays[d.date.getDay()]}</div>`)
+      .join("") +
+    `</div>`;
+
   html += `<div class="grid">` + cycle.days.map(d => {
-    const cls = (isWeekend(d.date) ? "weekend " : "") + (isNRWHoliday(d.date) ? "holiday" : "");
-    
-    // Balken-Bereich
+
+    const cls = (isWeekend(d.date) ? "weekend " : "") +
+                (isNRWHoliday(d.date) ? "holiday" : "");
+
     const therapies = d.events.filter(ev => ev.type === "therapy");
+
     let barHtml = "";
     if (therapies.length > 0) {
-        barHtml = `<div class="therapy-bars">` + therapies.map(t => `<div class="bar" style="background:${t.color}">${t.short}</div>`).join("") + `</div>`;
+      barHtml = `<div class="therapy-bars">` +
+        therapies.map(t =>
+          `<div class="bar" style="background:${t.color}">${t.short}</div>`
+        ).join("") +
+      `</div>`;
     }
 
-    // Icon- & Label-Bereich
     let iconsHtml = "";
     d.events.forEach(ev => {
-      if(ev.type === "injection") iconsHtml += `<div class="icon-block"><div class="icon">💉</div><div class="icon-label">${ev.label}</div></div>`;
-      if(ev.type === "lab") iconsHtml += `<div class="icon-block"><div class="icon">🩸</div><div class="icon-label">${ev.label}</div></div>`;
+      if(ev.type === "injection")
+        iconsHtml += `<div class="icon-block"><div class="icon">💉</div><div class="icon-label">${ev.label}</div></div>`;
+      if(ev.type === "lab")
+        iconsHtml += `<div class="icon-block"><div class="icon">🩸</div><div class="icon-label">${ev.label}</div></div>`;
     });
 
     const dayLabel = ((d.day - 1) % 7 === 0)
@@ -598,29 +736,34 @@ function renderGraphicOneCycle(cycle){
         </div>
       </div>`;
   }).join("") + `</div>`;
-  graphicEl.innerHTML = html;
+
+  targetEl.innerHTML = html;
 }
 
-function renderTableAllCycles(cycles){
+function renderTableAllCycles(cycles, followUpLabel = null, mainCycleCount = null){
+
   let html = `
     <table>
-      <tr>
-        <th>Datum</th>
-        <th>Zyklus</th>
-        <th>Tag</th>
-        <th>Maßnahme</th>
-        <th>Hinweis</th>
-      </tr>`;
+      <thead>
+        <tr>
+          <th>Datum</th>
+          <th>Zyklus</th>
+          <th>Tag</th>
+          <th>Maßnahme</th>
+          <th>Hinweis</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
 
-  cycles.forEach(cyc => {
+  cycles.forEach((cyc, index) => {
+
     cyc.days.forEach(d => {
 
-      if (d.events.length === 0) return; // Nur Tage mit Events anzeigen
+      if (d.events.length === 0) return;
 
-      // Maßnahmen sammeln
       const measures = d.events.map(ev => ev.drug || ev.label).join(", ");
 
-      // Hinweis
       let hint = "";
       if (isNRWHoliday(d.date)) hint = "⚠️ Feiertag";
       else if (isWeekend(d.date)) hint = "⚠️ WE";
@@ -634,23 +777,42 @@ function renderTableAllCycles(cycles){
           <td class="warning">${hint}</td>
         </tr>`;
     });
+
+    // 🔵 NACH letzter Haupttherapie-Zyklus → Trennzeile einfügen
+    if (
+      followUpLabel &&
+      mainCycleCount &&
+      index === mainCycleCount - 1
+    ) {
+      html += `
+        <tr class="followup-separator">
+          <td colspan="5">
+            Umstellung auf Folgetherapie: ${followUpLabel}
+          </td>
+        </tr>
+      `;
+    }
+
   });
 
-  html += `</table>`;
+  html += `
+      </tbody>
+    </table>`;
+
   tableEl.innerHTML = html;
 }
 
 /* ===== DRUCK-FUNKTIONEN ===== */
-function printGraphic(){
+function printGraphic() {
   document.body.classList.remove("print-table");
   document.body.classList.add("print-graphic");
-  window.print();
+  setTimeout(() => window.print(), 50);
 }
 
-function printTable(){
+function printTable() {
   document.body.classList.remove("print-graphic");
   document.body.classList.add("print-table");
-  window.print();
+  setTimeout(() => window.print(), 50);
 }
 
 // formEl.addEventListener("submit", (e)=>{
@@ -699,28 +861,79 @@ formEl.addEventListener("submit", (e)=>{
     return;
   }
 
-  const [schemaKey, schema] = selected;  const cycles = buildCycles(startDate, schema);
+  const [schemaKey, schema] = selected;  
+  // const schema = selected;
+  const hasFollowUp = hasFollowUpEl.checked;
+
+  let cyclesMain = buildCycles(startDate, schema, !hasFollowUp);
+  let allCycles = [...cyclesMain];
+
+  graphicEl.innerHTML = "";   // Wichtig: vorher leeren
+
+  renderGraphicOneCycle(cyclesMain[0], graphicEl);
+  renderLegend(schema);
+
+  if (hasFollowUp) {
+
+    const followSchema = schemas[followUpSelect.value];
+    const followStart = addDays(
+        startDate,
+        schema.zyklus_tage * schema.anzahl_zyklen
+    );
+
+    const cyclesFollow = buildCycles(followStart, followSchema, false);
+    allCycles = [...cyclesMain, ...cyclesFollow];
+
+    const secondWrapper = document.createElement("div");
+    secondWrapper.innerHTML = `<h2 style="margin-top:2rem;">Folgetherapie: ${followSchema.label}</h2>`;
+
+    const secondGraphic = document.createElement("div");
+
+    secondWrapper.appendChild(secondGraphic);
+    graphicEl.appendChild(secondWrapper);
+
+    renderGraphicOneCycle(cyclesFollow[0], secondGraphic);
+  }
+
 
   // Der Patientenkopf enthält nun explizit das Schema als Titel
-  patientEl.innerHTML = `
-    <div style="border-bottom: 2px solid #333; margin-bottom: 20px; padding-bottom: 10px;">
-      <h1 style="margin:0 0 10px 0; color:#2563eb; font-size: 1.8rem; display: block !important;">
-        Therapieplan: ${schema.label}
-      </h1>
-      <p style="margin:0; font-size: 1.1rem; line-height: 1.5;">
-        <strong>Patient:</strong> ${vornameEl.value} ${nachnameEl.value} | 
-        <strong>Geburtsdatum:</strong> ${geburt || "—"}<br>
-        <span style="font-size: 0.9rem; color: #666;">Erstellt am: ${new Date().toLocaleDateString("de-DE")}</span>
-      </p>
-    </div>`;
+// Titel dynamisch zusammensetzen
+let titleText = schema.label;
+
+if (hasFollowUp) {
+  const followSchema = schemas[followUpSelect.value];
+  titleText += " → " + followSchema.label;
+}
+
+// Patientenkopf
+patientEl.innerHTML = `
+  <div style="border-bottom: 2px solid #333; margin-bottom: 20px; padding-bottom: 10px;">
+    <h1 style="margin:0 0 10px 0; color:#2563eb; font-size: 1.8rem;">
+      Therapieplan: ${titleText}
+    </h1>
+    <p style="margin:0; font-size: 1.1rem; line-height: 1.5;">
+      <strong>Patient:</strong> ${vornameEl.value} ${nachnameEl.value} | 
+      <strong>Geburtsdatum:</strong> ${geburt || "—"}<br> 
+      <strong>Datum erste Therapie:</strong> ${fmt(startDate)}<br>
+      <span style="font-size: 0.9rem; color: #666;">
+        Erstellt am: ${new Date().toLocaleDateString("de-DE")}
+      </span>
+    </p>
+  </div>`;
 
   window.onafterprint = () => {
     document.body.classList.remove("print-graphic","print-table");
   };
 
-  renderGraphicOneCycle(cycles[0]);
-  renderLegend(schema);
-  renderTableAllCycles(cycles);
+  if (hasFollowUp) {
+    renderTableAllCycles(
+      allCycles,
+      schemas[followUpSelect.value].label,
+      cyclesMain.length
+    );
+  } else {
+    renderTableAllCycles(allCycles);
+  }
   planEl.style.display = "block";
   planEl.scrollIntoView({ behavior: 'smooth' });
 });
