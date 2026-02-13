@@ -556,7 +556,7 @@
       { "type": "therapy", "drug": "Pembrolizumab", "short": "Pem", "day": 1 },      
       { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "day": 8 },
       { "type": "therapy", "drug": "Paclitaxel", "short": "Pac","day": 15 },         
-      { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 },
+      { "type": "lab", "label": "Labor", "fasting": true, "workdays_before_next_cycle_start": 2 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 7 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 12 }
     ]
@@ -570,7 +570,7 @@
       { "type": "therapy", "drug": "Cyclophosphamid", "short": "C", "day": 1 },
       { "type": "therapy", "drug": "Pembrolizumab", "short": "Pem", "day": 1 },      
       { "type": "lab", "label": "Labor", "day": 8 },
-      { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
+      { "type": "lab", "label": "Labor", "fasting": true, "workdays_before_next_cycle_start": 2 }
     ]
   },
   "TCbHP_q3w": {
@@ -588,7 +588,7 @@
     ]
   },
   "Paclitaxel_Tratuzumab_Pertuzumab_q3w": {
-    "label": "Paclitaxel wöchentlich, Trastuzumab/Pertuzumab alle 3 Wochen",
+    "label": "Paclitaxel wöchentlich, Trastuzumab + Pertuzumab alle 3 Wochen",
     "zyklus_tage": 21,
     "anzahl_zyklen": 4,
     "events": [
@@ -973,8 +973,17 @@ function renderGraphicOneCycle(cycle, targetEl){
     d.events.forEach(ev => {
       if(ev.type === "injection")
         iconsHtml += `<div class="icon-block"><div class="icon">💉</div><div class="icon-label">${ev.label}</div></div>`;
-      if(ev.type === "lab")
-        iconsHtml += `<div class="icon-block"><div class="icon">🩸</div><div class="icon-label">${ev.label}</div></div>`;
+      if (ev.type === "lab") {
+        iconsHtml += `
+          <div class="icon-block">
+            <div class="icon">🩸</div>
+            <div class="icon-label">
+              ${ev.label}
+              ${ev.fasting ? `<br><span style="color:#b91c1c;">⚠️ nüchtern!</span>` : ""}
+            </div>
+          </div>
+        `;
+      }
     });
 
     const dayLabel = ((d.day - 1) % 7 === 0)
@@ -1016,7 +1025,15 @@ function renderTableAllCycles(cycles, followUpLabel = null, mainCycleCount = nul
 
       if (d.events.length === 0) return;
 
-      const measures = d.events.map(ev => ev.drug || ev.label).join(", ");
+      const measures = d.events.map(ev => {
+
+        if (ev.type === "lab" && ev.fasting) {
+          return `${ev.label} – ⚠️ <strong>nüchtern!</strong> ⚠️`;
+        }
+
+        return ev.drug || ev.label;
+
+      }).join(", ");
 
       let hint = "";
       if (isNRWHoliday(d.date)) hint = "⚠️ Feiertag";
