@@ -317,6 +317,7 @@
   #legend,
   #table,
   #print-footer,
+  #supportGraphic,
   #supportPlan {
     display: none;
   }
@@ -333,7 +334,7 @@
     page: graphicPage;
   }
 
-  body.print-support #supportPlan,
+  body.print-support #supportGraphic,
   body.print-support #patient,
   body.print-support #print-footer {
     display: block !important;
@@ -494,7 +495,9 @@
     <div class="no-print" style="margin:2rem 0; display:flex; gap:1rem; background: #eee; padding: 1rem; border-radius: 8px;">
         <button type="button" onclick="printGraphic()">Grafik drucken (Querformat)</button>
         <button type="button" onclick="printTable()">Tabelle drucken (Hochformat)</button>
-        <button type="button" onclick="printSupport()">Begleitmedikation drucken</button>
+        <button type="button" id="printSupportBtn" onclick="printSupport()">
+          Begleitmedikation drucken
+        </button>
     </div>
 
     <div id="table-container">
@@ -625,6 +628,7 @@ const supportGraphicEl = document.getElementById("supportGraphic");
 const supportSelect = document.getElementById("supportSelect");
 const supportFollowUpSelect = document.getElementById("supportFollowUpSelect");
 const supportFollowUpWrapper = document.getElementById("supportFollowUpWrapper");
+const printSupportBtn = document.getElementById("printSupportBtn");
 
 const supportSchemas = {
   "None": {
@@ -1084,26 +1088,55 @@ function renderSupportPlan(
   gcsfConfigMain = null,
   gcsfConfigFollow = null
 ) {
+
   let graphicHtml = "";
 
   cycles.forEach((cycle, idx) => {
 
+    // 1️⃣ Zuerst bestimmen, welches Schema gilt
     let currentLabel = mainLabel;
+    let currentSupportSchema = mainSupportSchema;
+    let currentGcsfConfig = gcsfConfigMain;
 
     if (mainCycleCount && followLabel && idx >= mainCycleCount) {
       currentLabel = followLabel;
     }
 
-    let currentSupportSchema = mainSupportSchema;
-    let currentGcsfConfig = gcsfConfigMain;
-
     if (mainCycleCount && idx >= mainCycleCount) {
       currentGcsfConfig = gcsfConfigFollow;
     }
+
     if (mainCycleCount && followSupportSchema && idx >= mainCycleCount) {
       currentSupportSchema = followSupportSchema;
     }
 
+    // 2️⃣ Prüfen, ob in diesem Zyklus überhaupt etwas existiert
+    const hasSupportMeds =
+      currentSupportSchema &&
+      currentSupportSchema.days.some(supportDay =>
+        cycle.days.some(dayObj => dayObj.day === supportDay.day)
+      );
+
+    let hasGcsf = false;
+
+    if (currentGcsfConfig) {
+      if (currentGcsfConfig.multipleDays) {
+        hasGcsf = currentGcsfConfig.multipleDays.some(d =>
+          cycle.days.some(dayObj => dayObj.day === d)
+        );
+      } else if (currentGcsfConfig.day) {
+        hasGcsf = cycle.days.some(dayObj =>
+          dayObj.day === currentGcsfConfig.day
+        );
+      }
+    }
+
+    // 3️⃣ Wenn nichts vorhanden → Zyklus überspringen
+    if (!hasSupportMeds && !hasGcsf) {
+      return;
+    }
+
+    // 4️⃣ Jetzt erst rendern
     graphicHtml += `
       <div style="margin-top:2rem;">
         <h2>Zyklus ${cycle.index} ${currentLabel}:</h2>
@@ -1111,139 +1144,89 @@ function renderSupportPlan(
     `;
 
     const totalDays = cycle.days.length;
-
     const weeksToRender = new Set();
 
-    // Wochen aus Begleitmedikation
-    currentSupportSchema.days.forEach(supportDay => {
-      const weekIndex = Math.floor((supportDay.day - 1) / 7);
-      weeksToRender.add(weekIndex);
-    });
+    if (currentSupportSchema) {
+      currentSupportSchema.days.forEach(supportDay => {
+        const weekIndex = Math.floor((supportDay.day - 1) / 7);
+        weeksToRender.add(weekIndex);
+      });
+    }
 
-    // Wochen aus G-CSF
     if (currentGcsfConfig) {
-
       if (currentGcsfConfig.multipleDays) {
         currentGcsfConfig.multipleDays.forEach(d => {
           const weekIndex = Math.floor((d - 1) / 7);
           weeksToRender.add(weekIndex);
         });
-      } 
-      else if (currentGcsfConfig.day) {
+      } else if (currentGcsfConfig.day) {
         const weekIndex = Math.floor((currentGcsfConfig.day - 1) / 7);
         weeksToRender.add(weekIndex);
       }
-
     }
 
-    const sortedWeeks = Array.from(weeksToRender).sort((a, b) => a - b);
+    const sortedWeeks = Array.from(weeksToRender).sort((a,b)=>a-b);
 
     sortedWeeks.forEach(w => {
 
       graphicHtml += `
-        <div style="
-          display:grid;
-          grid-template-columns:repeat(7,1fr);
-          gap:10px;
-          margin-bottom:1.5rem;
-        ">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:1.5rem;">
       `;
 
-      for (let i = 0; i < 7; i++) {
+      for (let i=0;i<7;i++){
 
-        const dayIndex = w * 7 + i;
+        const dayIndex = w*7+i;
         if (dayIndex >= totalDays) break;
 
         const dayObj = cycle.days[dayIndex];
         const date = dayObj.date;
         const weekday = weekdays[date.getDay()];
 
-        const supportDay = currentSupportSchema.days.find(
-          d => d.day === dayObj.day
-        );
-
-        const isWeekendDay = isWeekend(date);
-        const isHolidayDay = isNRWHoliday(date);
-
-        let warningIcon = "";
-        if (isHolidayDay) warningIcon = "⚠️ Feiertag";
-        else if (isWeekendDay) warningIcon = "⚠️ Wochenende";
+        const supportDay =
+          currentSupportSchema &&
+          currentSupportSchema.days.find(d=>d.day===dayObj.day);
 
         graphicHtml += `
-          <div style="
-            border:1px solid #e5e7eb;
-            border-radius:12px;
-            padding:10px;
-            background:${isWeekendDay || isHolidayDay ? '#f3f4f6' : '#f9fafb'};
-            min-height:120px;
-          ">
-            <div style="font-weight:700; margin-bottom:6px; font-size:1.1rem;">
+          <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#f9fafb;min-height:120px;">
+            <div style="font-weight:700;margin-bottom:6px;font-size:1.1rem;">
               ${fmt(date)}<br>
-              <span style="font-weight:500; font-size:0.75rem; color:#6b7280;">
+              <span style="font-weight:500;font-size:0.75rem;color:#6b7280;">
                 ${weekday} (d${dayObj.day})
               </span>
-              ${
-                warningIcon
-                  ? `<div style="font-size:0.75rem; color:#b91c1c; margin-top:4px;">
-                       ${warningIcon}
-                     </div>`
-                  : ""
-              }
             </div>
         `;
 
-        // 🔷 Normale Begleitmedikation
-        if (supportDay) {
-          supportDay.meds.forEach(med => {
-            graphicHtml += `
-              <div style="
-                margin-bottom:6px;
-                padding:6px;
-                background:white;
-                border-radius:8px;
-                font-size:0.8rem;
-                box-shadow:0 1px 3px rgba(0,0,0,0.05);
-              ">
+        if (supportDay){
+          supportDay.meds.forEach(med=>{
+            graphicHtml+=`
+              <div style="margin-bottom:6px;padding:6px;background:white;border-radius:8px;font-size:0.8rem;">
                 <strong>${med.name}</strong><br>
-                ${med.dosage}${med.note ? ' – ' + med.note : ''}
+                ${med.dosage}${med.note?' – '+med.note:''}
               </div>
             `;
           });
         }
 
-        // 🔷 G-CSF Integration (HIER gehört es hin)
-        if (currentGcsfConfig) {
+        if (currentGcsfConfig){
+          let gcsfMatch=false;
+          if (currentGcsfConfig.multipleDays)
+            gcsfMatch=currentGcsfConfig.multipleDays.includes(dayObj.day);
+          else if (currentGcsfConfig.day)
+            gcsfMatch=dayObj.day===currentGcsfConfig.day;
 
-          let gcsfMatch = false;
-
-          if (currentGcsfConfig.multipleDays) {
-            gcsfMatch = currentGcsfConfig.multipleDays.includes(dayObj.day);
-          } 
-          else if (currentGcsfConfig.day) {
-            gcsfMatch = dayObj.day === currentGcsfConfig.day;
-          }
-
-          if (gcsfMatch) {
-            graphicHtml += `
-              <div style="
-                margin-bottom:6px;
-                padding:6px;
-                background:#e0f2fe;
-                border-radius:8px;
-                font-size:0.8rem;
-                box-shadow:0 1px 3px rgba(0,0,0,0.05);
-              ">
-                <strong>${currentGcsfConfig.drug}</strong><br> 
-                Injektion
+          if (gcsfMatch){
+            graphicHtml+=`
+              <div style="margin-bottom:6px;padding:6px;background:#e0f2fe;border-radius:8px;font-size:0.8rem;">
+                <strong>${currentGcsfConfig.drug}</strong><br>Injektion
               </div>
             `;
           }
         }
 
-        graphicHtml += `</div>`;
+        graphicHtml+=`</div>`;
       }
 
-      graphicHtml += `</div>`;
+      graphicHtml+=`</div>`;
     });
 
   });
@@ -1589,6 +1572,30 @@ formEl.addEventListener("submit", (e)=>{
       gcsfConfigFollow
     );
   }
+  
+  let hasAnySupport = false;
+  // Hauptsupport vorhanden?
+  if (mainSupportSchema && mainSupportSchema.days.length > 0) {
+    hasAnySupport = true;
+  }
+
+  // FollowSupport vorhanden?
+  if (followSupportSchema && followSupportSchema.days.length > 0) {
+    hasAnySupport = true;
+  }
+
+  // G-CSF Haupt?
+  if (gcsfConfigMain) {
+    hasAnySupport = true;
+  }
+
+  // G-CSF Follow?
+  if (gcsfConfigFollow) {
+    hasAnySupport = true;
+  }
+
+  // Button ein-/ausblenden
+  printSupportBtn.style.display = hasAnySupport ? "inline-block" : "none";
 
   /* ==============================
      FINAL
