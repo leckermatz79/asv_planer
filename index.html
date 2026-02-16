@@ -13,6 +13,9 @@
   * {
     box-sizing: border-box;
   }
+  html {
+    scrollbar-gutter: stable;
+  }
   :root {
     --primary: #2563eb;          /* Hauptblau */
     --primary-dark: #1e40af;     /* dunkler für Hover */
@@ -43,7 +46,16 @@
     letter-spacing: 0.5px;
     color: #6b7280;
   }
+  form label input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+  }
 
+  form label:has(input[type="checkbox"]) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
   /* Inputs */
   form input,
   form select {
@@ -1572,7 +1584,7 @@ formEl.addEventListener("submit", (e)=>{
       gcsfConfigFollow
     );
   }
-  
+
   let hasAnySupport = false;
   // Hauptsupport vorhanden?
   if (mainSupportSchema && mainSupportSchema.days.length > 0) {
