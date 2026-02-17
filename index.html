@@ -298,6 +298,10 @@
       grid-template-columns: 1fr 1fr;
       gap: 1.4rem 1.8rem;
     }
+  .page-break-before {
+    page-break-before: always;     /* alt */
+    break-before: page;            /* modern */
+  }
   /* ===== DRUCK-LOGIK ===== */
   @media print {
 
@@ -626,6 +630,28 @@
       { "type": "therapy", "drug": "Trastuzumab", "short": "Her", "day": 1 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
     ]
+  },
+  "PORTEC-3 Teil 1": {
+    "label": "PORTEC-3 Teil 1 (Cisplatin q3w + Radiatio)",
+    "zyklus_tage": 21,
+    "anzahl_zyklen": 2,
+    "default_gcsf": false,
+    "events": [
+      { "type": "therapy", "drug": "Cisplatin", "short": "Cis", "day": 1 },
+      { "type": "lab", "label": "Labor", "day": 8 },
+      { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
+    ]
+  },
+  "PORTEC-3 Teil 2": {
+    "label": "PORTEC-3 Teil 2 (Carboplatin + Paclitaxel q3w)",
+    "zyklus_tage": 21,
+    "anzahl_zyklen": 4,
+    "events": [
+      { "type": "therapy", "drug": "Carboplatin", "short": "Cb", "day": 1 },
+      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "day": 1 },
+      { "type": "lab", "label": "Labor", "day": 8 },
+      { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
+    ]
   }
 }
 </script>
@@ -664,6 +690,15 @@ const supportSchemas = {
       ]},
       { day: 4, meds: [
         { name: "Olanzapin 5 mg", dosage: "0-0-1", note: "abends" }
+      ]}
+    ]
+  },
+  "Akynzeo mono": {
+    label: "Akynzeo mono",
+    version: "v1.0 – 02/2026",
+    days: [
+      { day: 1, meds: [
+        { name: "Akynzeo 300/0,5 mg", dosage: "1-0-0", note: "morgens" }
       ]}
     ]
   }
@@ -1494,18 +1529,28 @@ formEl.addEventListener("submit", (e)=>{
 
   if (hasFollowUp) {
 
+    const followStart = addDays(
+      startDate,
+      schema.zyklus_tage * schema.anzahl_zyklen
+    );
     const secondWrapper = document.createElement("div");
+    secondWrapper.classList.add("page-break-before");
     secondWrapper.innerHTML =
-      `<h2 style="margin-top:2rem;">Folgetherapie: ${followSchema.label}</h2>`;
+      `      <h1 style="padding-top: 10px; margin:0 10px 10px 0; color:#2563eb; font-size:1.8rem;">Folgetherapie: ${followSchema.label}
+            </h1>
+            <p style="margin:0; font-size:1.1rem; line-height:1.5;">
+              <strong>Patient:</strong> ${vornameEl.value} ${nachnameEl.value} |
+              <strong>Geburtsdatum:</strong> ${geburt || "—"}<br>
+              <strong>Datum erste Therapie:</strong> ${fmt(followStart)}<br>
+              <span style="font-size:0.9rem; color:#666;">
+                Erstellt am: ${new Date().toLocaleDateString("de-DE")}
+              </span>
+            </p>`;
 
     const secondGraphic = document.createElement("div");
     secondWrapper.appendChild(secondGraphic);
     graphicEl.appendChild(secondWrapper);
 
-    const followStart = addDays(
-      startDate,
-      schema.zyklus_tage * schema.anzahl_zyklen
-    );
 
     const cyclesFollow = buildCycles(followStart, extendedFollowSchema, false);
     renderGraphicOneCycle(cyclesFollow[0], secondGraphic);
