@@ -285,7 +285,7 @@
     /* Date-Input optisch an andere Felder angleichen */
     form input[type="date"] {
       height: auto;
-      line-height: 1.2;
+      line-height: 1.0;
       padding: 0.75rem;
     }
     form input[type="date"]::-webkit-date-and-time-value {
@@ -360,8 +360,18 @@
     page: supportPage;
   }
 
+  .support-week {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .support-cycle {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
   @page supportPage {
-    size: A4 portrait;
+    size: A4 landscape;
     margin: 15mm;
   }
 
@@ -417,8 +427,8 @@
   <form id="therapyForm">
     <label>Vorname<input id="vorname" required></label>
     <label>Nachname<input id="nachname" required></label>
-    <label>Geburtsdatum (optional, TT.MM.JJJJ)
-      <input id="geburt" placeholder="TT.MM.JJJJ">
+    <label>Geburtsdatum (optional)
+      <input type="date" id="geburt" autocomplete="off">
     </label>
     <label class="schema-field">
       Chemotherapie-Schema
@@ -652,7 +662,43 @@
       { "type": "lab", "label": "Labor", "day": 8 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
     ]
-  }
+  },
+  "nab-Paclitaxel / Atezolizumab": {
+    "label": "nab-Paclitaxel / Atezolizumab",
+    "zyklus_tage": 28,
+    "anzahl_zyklen": 4,
+    "events": [
+      { "type": "therapy", "drug": "Nab-Paclitaxel", "short": "nab-Pac", "day": 1 },
+      { "type": "therapy", "drug": "Atezolizumab", "short": "Atezo", "day": 1 },
+      { "type": "therapy", "drug": "Nab-Paclitaxel", "short": "nab-Pac", "day": 8 },
+      { "type": "therapy", "drug": "Nab-Paclitaxel", "short": "nab-Pac", "day": 15 },
+      { "type": "therapy", "drug": "Atezolizumab", "short": "Atezo", "day": 15 },
+      { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 17 },
+      { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 12, "fasting": true },
+      { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 7 },
+      { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2, "fasting": true}
+    ]
+  },
+  "Pembrolizumab postneoadjuvant": {
+    "label": "Pembrolizumab post-neoadjuvant",
+    "zyklus_tage": 21,
+    "anzahl_zyklen": 9,
+    "events": [
+      { "type": "therapy", "drug": "Pembrolizumab", "short": "Pembro", "day": 1 },
+      { "type": "lab", "label": "Labor", "day": 8 },
+      { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 , "fasting": true }
+    ]
+  },
+  "T-DM1 postneoadjuvant": {
+    "label": "T-DM1 postneoadjuvant",
+    "zyklus_tage": 21,
+    "anzahl_zyklen": 14,
+    "events": [
+      { "type": "therapy", "drug": "T-DM1", "short": "T-DM1", "day": 1 },
+      { "type": "lab", "label": "Labor", "day": 8 },
+      { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
+    ]
+  }  
 }
 </script>
 
@@ -710,11 +756,11 @@ const drugColorRegistry = {
   "Nab-Paclitaxel": "#047857",          // dunkleres Grün
   "Docetaxel": "#0d9488",               // Petrol
 
-  // Anthrazyklin
-  "Epirubicin": "#2563eb",              // kräftiges Blau
-
   // Alkylanzien
-  "Cyclophosphamid": "#b91c1c",         // tiefes Rot
+  "Cyclophosphamid": "#2563eb",              // kräftiges Blau
+
+  // Anthrazyklin
+  "Epirubicin": "#b91c1c",         // tiefes Rot
 
   // Platin
   "Carboplatin": "#f59e0b",             // warmes Amber
@@ -728,6 +774,7 @@ const drugColorRegistry = {
 
   // Immuntherapie
   "Pembrolizumab": "#8b5cf6",           // Violett
+  "Atezolizumab": "#9333ea",            // dunkleres Violett
 
   // ADC / neuere Substanzen
   "Mirvetuximab Soravtansin": "#0891b2",   // Cyan
@@ -871,11 +918,20 @@ const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return
 const fmt = d => d.toLocaleDateString("de-DE");
 
 function isValidBirthdate(value){
-  if (!value) return true;
-  const m = value.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-  if (!m) return false;
-  const d = new Date(parseInt(m[3],10), parseInt(m[2],10)-1, parseInt(m[1],10));
-  return d instanceof Date && !isNaN(d) && d <= new Date();
+  if (!value) return true; // optionales Feld
+
+  const birthDate = new Date(value);
+  if (isNaN(birthDate)) return false;
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+
+  return age >= 18;
 }
 
 function easterSunday(y){
@@ -1185,9 +1241,8 @@ function renderSupportPlan(
 
     // 4️⃣ Jetzt erst rendern
     graphicHtml += `
-      <div style="margin-top:2rem;">
+      <div class="support-cycle" style="margin-top:2rem;">
         <h2>Zyklus ${cycle.index} ${currentLabel}:</h2>
-      </div>
     `;
 
     const totalDays = cycle.days.length;
@@ -1217,7 +1272,8 @@ function renderSupportPlan(
     sortedWeeks.forEach(w => {
 
       graphicHtml += `
-        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:1.5rem;">
+        <div class="support-week"
+            style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:1.5rem;">
       `;
 
       for (let i=0;i<7;i++){
@@ -1276,8 +1332,30 @@ function renderSupportPlan(
       graphicHtml+=`</div>`;
     });
 
+    // Close the .support-cycle wrapper
+    graphicHtml += `</div>`;
   });
+  graphicHtml += `
+    <div style="
+        margin-top:2rem;
+        padding:1rem;
+        border-top:2px solid #333;
+        font-size:0.9rem;
+        line-height:1.5;
+      ">
+      <p>
+        <strong>Bei Übelkeit:</strong><br>
+        Einnahme einer 8mg Ondansetron Schmelztablette als Notfallmedikament 
+        (im Mund zergehen lassen). Falls keine Besserung nach 20–30 Minuten:
+        Notfallnummer anrufen!
+      </p>
 
+      <p style="margin-top:1rem;">
+        <strong>Bei extremer Müdigkeit:</strong><br>
+        Einnahme einer 4mg Dexamethason-Tablette nach vorheriger telefonischer Rücksprache.
+      </p>
+    </div>
+  `;
   supportGraphicEl.innerHTML = graphicHtml;
 }
   // /* ===== TABELLARISCHE ÜBERSICHT ===== */
@@ -1364,9 +1442,9 @@ function printSupport() {
 formEl.addEventListener("submit", (e)=>{
   e.preventDefault();
 
-  const geburt = geburtEl.value.trim();
+  const geburt = geburtEl.value;
   if (!isValidBirthdate(geburt)) {
-    alert("Geburtsdatum prüfen!");
+    alert("Patient muss mindestens 18 Jahre alt sein.");
     return;
   }
 
