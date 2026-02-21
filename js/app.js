@@ -31,6 +31,7 @@
     cacheDom();
     initDrugColors();
     initSupportSchemas();
+    initGcsfSchemas();
     populateSchemaDropdowns();
     populateSupportDropdowns();
     registerEventListeners();
@@ -38,7 +39,8 @@
   }
 
   function loadSchemas() {
-    AppState.schemas = JSON.parse(document.getElementById("schemas").textContent);
+    // Schemas are now provided via external file (chemoSchemas.js)
+    AppState.schemas = window.CHEMO_SCHEMAS || {};
   }
 
   function cacheDom() {
@@ -162,29 +164,19 @@
 
   /* =========================
      SUPPORT SCHEMAS (Dropdown)
-     (same structure as your old branch)
+     (externalized to supportSchemas.js)
   ========================= */
 
-  let supportSchemas = null;
+  let supportSchemas = {};
+  let gcsfSchemas = {};
 
   function initSupportSchemas() {
-    // In future: replace this with fetch('/js/supportSchemas.js') or similar
-    supportSchemas = window.supportSchemasData || {
-      "None": { label: "None", version: "–", days: [] },
-      "Akynzeo_Olanzapin": {
-        label: "Akynzeo – Olanzapin",
-        version: "v1.0 – 01/2026",
-        days: [
-          { day: 1, meds: [
-            { name: "Akynzeo 300/0,5 mg", dosage: "1-0-0", note: "morning" },
-            { name: "Olanzapin 5 mg", dosage: "1-0-0", note: "morning" }
-          ]},
-          { day: 2, meds: [{ name: "Olanzapin 5 mg", dosage: "0-0-1", note: "evening" }]},
-          { day: 3, meds: [{ name: "Olanzapin 5 mg", dosage: "0-0-1", note: "evening" }]},
-          { day: 4, meds: [{ name: "Olanzapin 5 mg", dosage: "0-0-1", note: "evening" }]}
-        ]
-      }
-    };
+    // Support schemas are now provided via external file (supportSchemas.js)
+    supportSchemas = window.SUPPORT_SCHEMAS || {};
+  }
+
+  function initGcsfSchemas() {
+    gcsfSchemas = window.GCSF_SCHEMAS || {};
   }
   // =========================
   // SUPPORT PLAN RENDERER
