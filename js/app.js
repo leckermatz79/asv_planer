@@ -1,282 +1,733 @@
+/* /js/app.js
 /* =========================================
-   THERAPY PLANNER – CLEAN ARCHITECTURE V2
-   (Header + FollowUp + GCSF + Full DrugColors)
+   THERAPY PLANNER – Option B (Restored Features)
+   - i18n labels in dynamic HTML
+   - localized dates (birth/start/created)
+   - legend restored
+   - support dropdown restored
+   - labs + fasting in graphic + table
+   - follow-up restored (+ separator row)
+   - G-CSF icon styling restored
 ========================================= */
 
 (() => {
+  "use strict";
 
-  /* =========================================
+  /* =========================
      STATE
-  ========================================= */
+  ========================= */
 
   const AppState = {
     schemas: {},
-    currentSchema: null,
-    currentFollowSchema: null
+    lastRender: null // { schemaKey, schema, followKey, followSchema, startDate, ... }
   };
 
   const DOM = {};
 
   document.addEventListener("DOMContentLoaded", init);
 
-  function init(){
+  function init() {
     loadSchemas();
     cacheDom();
     initDrugColors();
+    initSupportSchemas();
     populateSchemaDropdowns();
+    populateSupportDropdowns();
     registerEventListeners();
     updateUIVisibility();
   }
 
-  function loadSchemas(){
-    AppState.schemas = JSON.parse(
-      document.getElementById("schemas").textContent
-    );
+  function loadSchemas() {
+    AppState.schemas = JSON.parse(document.getElementById("schemas").textContent);
   }
 
-  function cacheDom(){
-    const ids=[
-      "therapyForm","schemaInput","schemaList",
-      "hasFollowUp","followUpSelect","followUpWrapper",
-      "gcsfEnabled","gcsfRow","gcsfSelect","gcsfDay",
-      "gcsfEnabledFollow","gcsfRowFollow","gcsfSelectFollow","gcsfDayFollow",
-      "plan","graphic","table","patient",
-      "vorname","nachname","geburt","startdatum"
+  function cacheDom() {
+    const ids = [
+      "therapyForm",
+      "schemaInput",
+      "schemaList",
+      "languageSelect",
+
+      "supportSelect",
+      "supportFollowUpSelect",
+      "supportFollowUpWrapper",
+      "printSupportBtn",
+
+      "hasFollowUp",
+      "followUpSelect",
+      "followUpWrapper",
+
+      "gcsfEnabled",
+      "gcsfRow",
+      "gcsfSelect",
+      "gcsfDay",
+      "gcsfDayWrapper",
+
+      "gcsfEnabledFollow",
+      "gcsfRowFollow",
+      "gcsfSelectFollow",
+      "gcsfDayFollow",
+      "gcsfDayWrapperFollow",
+      "gcsfFollowUpToggle",
+
+      "plan",
+      "graphic",
+      "table",
+      "patient",
+
+      "vorname",
+      "nachname",
+      "geburt",
+      "startdatum",
+
+      "supportGraphic",
+      "supportPlan"
     ];
-    ids.forEach(id=>DOM[id]=document.getElementById(id));
+    ids.forEach((id) => (DOM[id] = document.getElementById(id)));
   }
 
-  /* =========================================
-     DRUG COLORS (FULL REGISTRY)
-  ========================================= */
+  /* =========================
+     i18n-safe helpers
+  ========================= */
 
-  let drugColors={};
+  function getLocale() {
+    // currentLang comes from i18n.js (global lexical binding) in your setup
+    const lang = (typeof currentLang !== "undefined" && currentLang) ? currentLang : "de";
+    return (window.localeMap && window.localeMap[lang]) || "de-DE";
+  }
 
-  function initDrugColors(){
-    drugColors={
-      "Paclitaxel":"#059669",
-      "Nab-Paclitaxel":"#047857",
-      "Docetaxel":"#0d9488",
-      "Cyclophosphamid":"#2563eb",
-      "Epirubicin":"#b91c1c",
-      "Carboplatin":"#f59e0b",
-      "Cisplatin":"#d97706",
-      "Trastuzumab":"#7c3aed",
-      "Pertuzumab":"#a21caf",
-      "T-DM1":"#be185d",
-      "Pembrolizumab":"#8b5cf6",
-      "Atezolizumab":"#9333ea"
+  function fmtDate(date) {
+    return date.toLocaleDateString(getLocale());
+  }
+
+  function parseDateInput(value) {
+    if (!value) return null;
+    const d = new Date(value + "T12:00:00");
+    return isNaN(d) ? null : d;
+  }
+
+  function safeT(key, ...params) {
+    // t() comes from i18n.js
+    if (typeof t === "function") return t(key, ...params);
+    return key;
+  }
+
+  function isWeekend(date) {
+    const dow = date.getDay();
+    return dow === 0 || dow === 6;
+  }
+
+  /* =========================
+     DRUG COLORS
+  ========================= */
+
+  let drugColors = {};
+
+  function initDrugColors() {
+    drugColors = {
+      "Paclitaxel": "#059669",
+      "Nab-Paclitaxel": "#047857",
+      "Docetaxel": "#0d9488",
+
+      "Cyclophosphamid": "#2563eb",
+      "Epirubicin": "#b91c1c",
+
+      "Carboplatin": "#f59e0b",
+      "Cisplatin": "#d97706",
+
+      "Trastuzumab": "#7c3aed",
+      "Pertuzumab": "#a21caf",
+      "T-DM1": "#be185d",
+      "Trastuzumab-Deruxtecan": "#9d174d",
+
+      "Pembrolizumab": "#8b5cf6",
+      "Atezolizumab": "#9333ea",
+
+      "Mirvetuximab Soravtansin": "#0891b2",
+      "Sacituzumab Govitecan": "#0ea5e9",
+
+      "Eribulin": "#4b5563",
+      "Trabectedin": "#374151",
+      "Methotrexat": "#65a30d"
     };
   }
 
-  function getDrugColor(drug){
-    return drugColors[drug]||"#6b7280";
+  function getDrugColor(drug) {
+    return drugColors[drug] || "#6b7280";
   }
 
-  /* =========================================
+  /* =========================
+     SUPPORT SCHEMAS (Dropdown)
+     (same structure as your old branch)
+  ========================= */
+
+  let supportSchemas = null;
+
+  function initSupportSchemas() {
+    supportSchemas = {
+      "None": { label: "Keine Begleitmedikation", version: "–", days: [] },
+      "Akynzeo_Olanzapin": {
+        label: "Akynzeo – Olanzapin",
+        version: "v1.0 – 01/2026",
+        days: [
+          { day: 1, meds: [
+            { name: "Akynzeo 300/0,5 mg", dosage: "1-0-0", note: "morgens" },
+            { name: "Olanzapin 5 mg", dosage: "1-0-0", note: "morgens" }
+          ]},
+          { day: 2, meds: [{ name: "Olanzapin 5 mg", dosage: "0-0-1", note: "abends" }]},
+          { day: 3, meds: [{ name: "Olanzapin 5 mg", dosage: "0-0-1", note: "abends" }]},
+          { day: 4, meds: [{ name: "Olanzapin 5 mg", dosage: "0-0-1", note: "abends" }]}
+        ]
+      },
+      "Akynzeo_mono": {
+        label: "Akynzeo mono",
+        version: "v1.0 – 02/2026",
+        days: [{ day: 1, meds: [{ name: "Akynzeo 300/0,5 mg", dosage: "1-0-0", note: "morgens" }]}]
+      }
+    };
+  }
+
+  /* =========================
      DROPDOWNS
-  ========================================= */
+  ========================= */
 
-  function populateSchemaDropdowns(){
-    Object.entries(AppState.schemas).forEach(([key,schema])=>{
-      const opt=document.createElement("option");
-      opt.value=schema.label;
-      opt.dataset.key=key;
+  function populateSchemaDropdowns() {
+    // datalist for schemaInput
+    Object.entries(AppState.schemas).forEach(([key, schema]) => {
+      const opt = document.createElement("option");
+      opt.value = schema.label;
+      opt.dataset.key = key;
       DOM.schemaList.appendChild(opt);
+    });
 
-      const followOpt=document.createElement("option");
-      followOpt.value=key;
-      followOpt.textContent=schema.label;
-      DOM.followUpSelect.appendChild(followOpt);
+    // followUp select
+    if (DOM.followUpSelect) {
+      DOM.followUpSelect.innerHTML = "";
+      Object.entries(AppState.schemas).forEach(([key, schema]) => {
+        const followOpt = document.createElement("option");
+        followOpt.value = key;
+        followOpt.textContent = schema.label;
+        DOM.followUpSelect.appendChild(followOpt);
+      });
+    }
+  }
+
+  function populateSupportDropdowns() {
+    if (!DOM.supportSelect) return;
+
+    DOM.supportSelect.innerHTML = "";
+    const placeholder = document.createElement("option");
+    placeholder.value = "---";
+    placeholder.textContent = "---";
+    DOM.supportSelect.appendChild(placeholder);
+
+    Object.entries(supportSchemas).forEach(([key, s]) => {
+      const opt = document.createElement("option");
+      opt.value = key;
+      opt.textContent = s.label;
+      DOM.supportSelect.appendChild(opt);
+    });
+
+    if (DOM.supportFollowUpSelect) {
+      DOM.supportFollowUpSelect.innerHTML = "";
+      const ph2 = document.createElement("option");
+      ph2.value = "---";
+      ph2.textContent = "---";
+      DOM.supportFollowUpSelect.appendChild(ph2);
+
+      Object.entries(supportSchemas).forEach(([key, s]) => {
+        const opt2 = document.createElement("option");
+        opt2.value = key;
+        opt2.textContent = s.label;
+        DOM.supportFollowUpSelect.appendChild(opt2);
+      });
+    }
+  }
+
+  /* =========================
+     EVENTS / UI VISIBILITY
+  ========================= */
+
+  function registerEventListeners() {
+    DOM.hasFollowUp?.addEventListener("change", () => {
+      updateUIVisibility();
+      rerenderIfNeeded();
+    });
+
+    DOM.gcsfEnabled?.addEventListener("change", () => {
+      updateUIVisibility();
+      rerenderIfNeeded();
+    });
+
+    DOM.gcsfSelect?.addEventListener("change", () => {
+      updateGcsfVisibility();
+      rerenderIfNeeded();
+    });
+
+    DOM.gcsfEnabledFollow?.addEventListener("change", () => {
+      updateUIVisibility();
+      rerenderIfNeeded();
+    });
+
+    DOM.gcsfSelectFollow?.addEventListener("change", () => {
+      updateGcsfFollowVisibility();
+      rerenderIfNeeded();
+    });
+
+    DOM.therapyForm?.addEventListener("submit", submitHandler);
+
+    // When language changes: i18n.js updates static texts, we must re-render dynamic output
+    DOM.languageSelect?.addEventListener("change", () => {
+      // i18n.js already calls setLanguage via its own listener
+      // we just rerender (if something is already displayed)
+      setTimeout(rerenderIfNeeded, 0);
     });
   }
 
-  /* =========================================
-     EVENTS
-  ========================================= */
-
-  function registerEventListeners(){
-    DOM.hasFollowUp.addEventListener("change",updateUIVisibility);
-    DOM.gcsfEnabled.addEventListener("change",updateUIVisibility);
-    DOM.gcsfEnabledFollow.addEventListener("change",updateUIVisibility);
-    DOM.therapyForm.addEventListener("submit",submitHandler);
+  function updateUIVisibility() {
+    updateFollowUpVisibility();
+    updateGcsfVisibility();
+    updateGcsfFollowVisibility();
   }
 
-  function updateUIVisibility(){
-    DOM.followUpWrapper.style.display=
-      DOM.hasFollowUp.checked?"block":"none";
+  function updateFollowUpVisibility() {
+    if (!DOM.hasFollowUp || !DOM.followUpWrapper) return;
 
-    DOM.gcsfRow.style.display=
-      DOM.gcsfEnabled.checked?"grid":"none";
+    const show = DOM.hasFollowUp.checked;
+    DOM.followUpWrapper.style.display = show ? "block" : "none";
 
-    DOM.gcsfRowFollow.style.display=
-      (DOM.hasFollowUp.checked&&DOM.gcsfEnabledFollow.checked)
-        ?"grid":"none";
+    if (DOM.supportFollowUpWrapper) DOM.supportFollowUpWrapper.style.display = show ? "block" : "none";
+    if (DOM.gcsfFollowUpToggle) DOM.gcsfFollowUpToggle.style.display = show ? "block" : "none";
+
+    if (!show && DOM.gcsfEnabledFollow) {
+      DOM.gcsfEnabledFollow.checked = false;
+    }
   }
 
-  /* =========================================
+  function updateGcsfVisibility() {
+    if (!DOM.gcsfEnabled || !DOM.gcsfRow) return;
+
+    const show = DOM.gcsfEnabled.checked;
+    DOM.gcsfRow.style.display = show ? "grid" : "none";
+
+    // hide day selector for Filgrastim (multiple days)
+    const isFilgrastim = DOM.gcsfSelect?.value === "Filgrastim";
+    if (DOM.gcsfDayWrapper) {
+      DOM.gcsfDayWrapper.style.display = show && !isFilgrastim ? "block" : "none";
+    }
+  }
+
+  function updateGcsfFollowVisibility() {
+    if (!DOM.gcsfRowFollow) return;
+
+    const show = !!(DOM.hasFollowUp?.checked && DOM.gcsfEnabledFollow?.checked);
+    DOM.gcsfRowFollow.style.display = show ? "grid" : "none";
+
+    const isFilgrastim = DOM.gcsfSelectFollow?.value === "Filgrastim";
+    if (DOM.gcsfDayWrapperFollow) {
+      DOM.gcsfDayWrapperFollow.style.display = show && !isFilgrastim ? "block" : "none";
+    }
+  }
+
+  /* =========================
      BUILD CYCLES
-  ========================================= */
+     (supports injections + labs + therapies)
+  ========================= */
 
-  function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+  function addDays(d, n) {
+    const x = new Date(d);
+    x.setDate(x.getDate() + n);
+    return x;
+  }
 
-  function buildCycles(startDate,schema,gcsfConfig=null){
-    const cycles=[];
+  function buildCycles(startDate, schema, extraEvents = []) {
+    const cycles = [];
 
-    for(let c=0;c<schema.anzahl_zyklen;c++){
-      const cycleStart=addDays(startDate,c*schema.zyklus_tage);
-      const days=Array.from({length:schema.zyklus_tage},(_,i)=>({
-        day:i+1,
-        date:addDays(cycleStart,i),
-        events:[]
+    for (let c = 0; c < schema.anzahl_zyklen; c++) {
+      const cycleStart = addDays(startDate, c * schema.zyklus_tage);
+
+      const days = Array.from({ length: schema.zyklus_tage }, (_, i) => ({
+        day: i + 1,
+        date: addDays(cycleStart, i),
+        events: []
       }));
 
-      schema.events.forEach(ev=>{
-        if(ev.day)days[ev.day-1].events.push(ev);
+      // base events (day-based only in your current JSON)
+      schema.events.forEach((ev) => {
+        if (typeof ev.day === "number" && days[ev.day - 1]) {
+          days[ev.day - 1].events.push(ev);
+        }
       });
 
-      if(gcsfConfig){
-        if(gcsfConfig.multipleDays){
-          gcsfConfig.multipleDays.forEach(d=>{
-            if(days[d-1])days[d-1].events.push({
-              type:"injection",
-              drug:gcsfConfig.drug
-            });
-          });
-        }else{
-          const d=gcsfConfig.day;
-          if(days[d-1])days[d-1].events.push({
-            type:"injection",
-            drug:gcsfConfig.drug
-          });
+      // extra events (e.g. gcsf injections)
+      extraEvents.forEach((ev) => {
+        if (typeof ev.day === "number" && days[ev.day - 1]) {
+          days[ev.day - 1].events.push(ev);
         }
-      }
+      });
 
-      cycles.push({index:c+1,days});
+      cycles.push({ index: c + 1, days });
     }
 
     return cycles;
   }
 
-  /* =========================================
-     HEADER RENDER
-  ========================================= */
+  function buildGcsfEvents(enabledEl, selectEl, dayEl) {
+    if (!enabledEl?.checked) return { config: null, events: [] };
 
-  function renderHeader(title,startDate){
-    const birth=DOM.geburt.value||"—";
+    const drug = selectEl?.value || "";
+    if (!drug) return { config: null, events: [] };
 
-    DOM.patient.innerHTML=`
-      <div style="border-bottom:2px solid #333;margin-bottom:20px;padding-bottom:10px;">
-        <h1 style="margin:0 0 10px 0;color:#2563eb;font-size:1.8rem;">
-          Therapieplan: ${title}
-        </h1>
-        <p style="margin:0;font-size:1.1rem;line-height:1.5;">
-          <strong>Patient:</strong> ${DOM.vorname.value} ${DOM.nachname.value} |
-          <strong>Geburtsdatum:</strong> ${birth}<br>
-          <strong>Datum erste Therapie:</strong> ${startDate.toLocaleDateString(window.localeMap[currentLang])}<br>
-          <span style="font-size:0.9rem;color:#666;">
-            Erstellt am: ${new Date().toLocaleDateString(window.localeMap[currentLang])}
-          </span>
-        </p>
-      </div>`;
-  }
-
-  /* =========================================
-     GRAPHIC RENDER
-  ========================================= */
-
-  function renderGraphic(cycle){
-    let html=`<div class="grid">`;
-
-    cycle.days.forEach(d=>{
-      const therapies=d.events.filter(e=>e.type==="therapy");
-      const injections=d.events.filter(e=>e.type==="injection");
-
-      let bars="";
-      if(therapies.length){
-        bars=`<div class="therapy-bars">`+
-          therapies.map(t=>
-            `<div class="bar" style="background:${getDrugColor(t.drug)}">${t.short||t.drug[0]}</div>`
-          ).join("")+
-        `</div>`;
-      }
-
-      let inj="";
-      if(injections.length){
-        inj=`<div style="margin-top:6px;font-size:0.8rem;color:#0ea5e9;">💉 ${injections.map(i=>i.drug).join(", ")}</div>`;
-      }
-
-      html+=`
-        <div class="day">
-          ${bars}
-          <div class="day-content">
-            ${inj}
-            <div class="day-label">d${d.day}</div>
-          </div>
-        </div>`;
-    });
-
-    html+=`</div>`;
-    DOM.graphic.innerHTML=html;
-  }
-
-  /* =========================================
-     TABLE
-  ========================================= */
-
-  function renderTable(cycles){
-    let html=`<table><tbody>`;
-
-    cycles.forEach(c=>{
-      c.days.forEach(d=>{
-        if(!d.events.length)return;
-
-        html+=`<tr>
-          <td>${d.date.toLocaleDateString(window.localeMap[currentLang])}</td>
-          <td>${c.index}</td>
-          <td>d${d.day}</td>
-          <td>${d.events.map(e=>e.drug||"").join(", ")}</td>
-        </tr>`;
-      });
-    });
-
-    html+=`</tbody></table>`;
-    DOM.table.innerHTML=html;
-  }
-
-  /* =========================================
-     SUBMIT
-  ========================================= */
-
-  function submitHandler(e){
-    e.preventDefault();
-
-    const selected=Object.entries(AppState.schemas).find(
-      ([k,s])=>s.label===DOM.schemaInput.value
-    );
-
-    if(!selected){alert("Bitte gültiges Schema wählen.");return;}
-
-    const [,schema]=selected;
-    const startDate=new Date(DOM.startdatum.value+"T12:00:00");
-
-    let gcsfMain=null;
-    if(DOM.gcsfEnabled.checked){
-      const drug=DOM.gcsfSelect.value;
-      if(drug==="Filgrastim")
-        gcsfMain={drug,multipleDays:[2,3,4,5,6]};
-      else
-        gcsfMain={drug,day:parseInt(DOM.gcsfDay.value)};
+    if (drug === "Filgrastim") {
+      const days = [2, 3, 4, 5, 6];
+      return {
+        config: { drug, multipleDays: days },
+        events: days.map((d) => ({ type: "injection", label: drug, day: d }))
+      };
     }
 
-    const cyclesMain=buildCycles(startDate,schema,gcsfMain);
-
-    renderHeader(schema.label,startDate);
-    renderGraphic(cyclesMain[0]);
-    renderTable(cyclesMain);
-
-    DOM.plan.style.display="block";
-    DOM.plan.scrollIntoView({behavior:"smooth"});
+    const day = parseInt(dayEl?.value || "2", 10);
+    return {
+      config: { drug, day },
+      events: [{ type: "injection", label: drug, day }]
+    };
   }
 
+  /* =========================
+     RENDER: HEADER
+  ========================= */
+
+  function renderHeader(titleText, startDate) {
+    const birthRaw = DOM.geburt?.value || "";
+    const birthDate = parseDateInput(birthRaw);
+
+    DOM.patient.innerHTML = `
+      <div style="border-bottom:2px solid #333; margin-bottom:20px; padding-bottom:10px;">
+        <h1 style="margin:0 0 10px 0; color:#2563eb; font-size:1.8rem;">
+          ${safeT("therapyPlanCreation")}: ${titleText}
+        </h1>
+        <p style="margin:0; font-size:1.1rem; line-height:1.5;">
+          <strong>${safeT("patient")}:</strong> ${DOM.vorname.value} ${DOM.nachname.value} |
+          <strong>${safeT("birthdate")}:</strong> ${birthDate ? fmtDate(birthDate) : "—"}<br>
+          <strong>${safeT("firstTherapyDate")}:</strong> ${fmtDate(startDate)}<br>
+          <span style="font-size:0.9rem; color:#666;">
+            ${safeT("createdOn")}: ${fmtDate(new Date())}
+          </span>
+        </p>
+      </div>
+    `;
+  }
+
+  /* =========================
+     RENDER: LEGEND
+  ========================= */
+
+  function renderLegend(schema, hasAnyInjection, hasAnyLab) {
+    const therapies = schema.events.filter((e) => e.type === "therapy");
+    const unique = {};
+    therapies.forEach((tEv) => (unique[tEv.drug] = tEv));
+
+    const items = Object.values(unique)
+      .map(
+        (tEv) => `
+        <div class="legend-item">
+          <div class="legend-bar" style="background:${getDrugColor(tEv.drug)}"></div>
+          <span>${tEv.drug}</span>
+        </div>
+      `
+      )
+      .join("");
+
+    const injectionItem = hasAnyInjection
+      ? `<div class="legend-item"><span>💉</span><span>G-CSF</span></div>`
+      : "";
+
+    const labItem = hasAnyLab
+      ? `<div class="legend-item"><span>🩸</span><span>${safeT("lab")}</span></div>`
+      : "";
+
+    const infoText = `
+      <div class="schema-info">
+        ${safeT("schemaInfo", schema.zyklus_tage, schema.anzahl_zyklen)}
+      </div>
+    `;
+
+    return `<div class="legend">${items}${injectionItem}${labItem}</div>${infoText}`;
+  }
+
+  /* =========================
+     RENDER: GRAPHIC (1 cycle)
+  ========================= */
+
+  function renderGraphicOneCycle(cycle) {
+    const lang = (typeof currentLang !== "undefined" && currentLang) ? currentLang : "de";
+    const weekdays =
+      (window.weekdayMap && window.weekdayMap[lang]) ? window.weekdayMap[lang]
+      : (window.weekdayMap && window.weekdayMap.de) ? window.weekdayMap.de
+      : ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+    let html = `
+      <div class="weekday-header">
+        ${cycle.days.slice(0, 7).map((d) => `<div>${weekdays[d.date.getDay()]}</div>`).join("")}
+      </div>
+      <div class="grid">
+    `;
+
+    cycle.days.forEach((d) => {
+      const therapies = d.events.filter((ev) => ev.type === "therapy");
+      const injections = d.events.filter((ev) => ev.type === "injection");
+      const labs = d.events.filter((ev) => ev.type === "lab");
+
+      let barHtml = "";
+      if (therapies.length > 0) {
+        barHtml =
+          `<div class="therapy-bars">` +
+          therapies
+            .map(
+              (tEv) =>
+                `<div class="bar" style="background:${getDrugColor(tEv.drug)}">${tEv.short || (tEv.drug ? tEv.drug[0] : "")}</div>`
+            )
+            .join("") +
+          `</div>`;
+      }
+
+      let iconsHtml = "";
+
+      injections.forEach((inj) => {
+        iconsHtml += `
+          <div class="icon-block">
+            <div class="icon">💉</div>
+            <div class="icon-label">${inj.label || inj.drug || "G-CSF"}</div>
+          </div>
+        `;
+      });
+
+      labs.forEach((lab) => {
+        iconsHtml += `
+          <div class="icon-block">
+            <div class="icon">🩸</div>
+            <div class="icon-label">
+              ${lab.label || safeT("lab")}
+              ${lab.fasting ? `<br><span style="color:#b91c1c;">⚠️ ${safeT("fasting")}</span>` : ""}
+            </div>
+          </div>
+        `;
+      });
+
+      // keep your "week start day label" behavior
+      const dayLabel = ((d.day - 1) % 7 === 0)
+        ? `<div class="day-label">d${d.day}</div>`
+        : "";
+
+      html += `
+        <div class="day ${isWeekend(d.date) ? "weekend" : ""}">
+          ${barHtml}
+          <div class="day-content">
+            ${iconsHtml}
+            ${dayLabel}
+          </div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+    DOM.graphic.innerHTML = html;
+  }
+
+  /* =========================
+     RENDER: TABLE (all cycles)
+  ========================= */
+
+  function renderTableAllCycles(cycles, followUpLabel = null, mainCycleCount = null) {
+    let html = `
+      <table>
+        <thead>
+          <tr>
+            <th>${safeT("date")}</th>
+            <th>${safeT("cycle")}</th>
+            <th>${safeT("day")}</th>
+            <th>${safeT("measure")}</th>
+            <th>${safeT("note")}</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    cycles.forEach((cyc, index) => {
+      cyc.days.forEach((d) => {
+        if (!d.events.length) return;
+
+        const measures = d.events
+          .map((ev) => {
+            if (ev.type === "therapy") return ev.drug;
+            if (ev.type === "lab") {
+              if (ev.fasting) return `${ev.label || safeT("lab")} – ⚠️ ${safeT("fasting")}`;
+              return ev.label || safeT("lab");
+            }
+            if (ev.type === "injection") return `💉 ${ev.label || ev.drug || "G-CSF"}`;
+            return ev.drug || ev.label || "";
+          })
+          .filter(Boolean)
+          .join(", ");
+
+        let hint = "";
+        if (isWeekend(d.date)) hint = `⚠️ ${safeT("weekend")}`;
+
+        html += `
+          <tr>
+            <td>${fmtDate(d.date)}</td>
+            <td>${cyc.index}</td>
+            <td>d${d.day}</td>
+            <td>${measures}</td>
+            <td class="warning">${hint}</td>
+          </tr>
+        `;
+      });
+
+      // separator row after main therapy
+      if (followUpLabel && mainCycleCount && index === mainCycleCount - 1) {
+        html += `
+          <tr class="followup-separator">
+            <td colspan="5">Umstellung auf Folgetherapie: ${followUpLabel}</td>
+          </tr>
+        `;
+      }
+    });
+
+    html += `</tbody></table>`;
+    DOM.table.innerHTML = html;
+  }
+
+  /* =========================
+     SUBMIT / RENDER ALL
+  ========================= */
+
+  function submitHandler(e) {
+    e.preventDefault();
+
+    const selected = Object.entries(AppState.schemas).find(
+      ([, s]) => s.label.toLowerCase() === (DOM.schemaInput.value || "").toLowerCase()
+    );
+
+    if (!selected) {
+      alert("Bitte ein gültiges Schema auswählen.");
+      return;
+    }
+
+    const [schemaKey, schema] = selected;
+
+    const startDate = parseDateInput(DOM.startdatum.value);
+    if (!startDate) {
+      alert("Bitte ein gültiges Startdatum wählen.");
+      return;
+    }
+
+    const hasFollowUp = !!DOM.hasFollowUp?.checked;
+
+    // Build G-CSF events
+    const gcsfMain = buildGcsfEvents(DOM.gcsfEnabled, DOM.gcsfSelect, DOM.gcsfDay);
+    const gcsfFollow = buildGcsfEvents(DOM.gcsfEnabledFollow, DOM.gcsfSelectFollow, DOM.gcsfDayFollow);
+
+    // Main cycles
+    const cyclesMain = buildCycles(startDate, schema, gcsfMain.events);
+    let allCycles = [...cyclesMain];
+
+    // Follow-up
+    let followSchema = null;
+    let followKey = null;
+    let cyclesFollow = null;
+
+    if (hasFollowUp) {
+      followKey = DOM.followUpSelect?.value || null;
+      followSchema = followKey ? AppState.schemas[followKey] : null;
+
+      if (followSchema) {
+        const followStart = addDays(startDate, schema.zyklus_tage * schema.anzahl_zyklen);
+        cyclesFollow = buildCycles(followStart, followSchema, gcsfFollow.events);
+        allCycles = [...cyclesMain, ...cyclesFollow];
+      }
+    }
+
+    // Store for re-render on language change
+    AppState.lastRender = {
+      schemaKey,
+      schema,
+      startDate,
+      hasFollowUp,
+      followKey,
+      followSchema,
+      cyclesMain,
+      cyclesFollow,
+      allCycles,
+      gcsfMain,
+      gcsfFollow
+    };
+
+    renderAll();
+  }
+
+  function renderAll() {
+    const r = AppState.lastRender;
+    if (!r) return;
+
+    // title text
+    let titleText = r.schema.label;
+    if (r.hasFollowUp && r.followSchema) titleText += " → " + r.followSchema.label;
+
+    renderHeader(titleText, r.startDate);
+
+    // Graphic: show first main cycle
+    DOM.graphic.innerHTML = "";
+    renderGraphicOneCycle(r.cyclesMain[0]);
+
+    // Legend under graphic
+    const hasAnyInjection =
+      r.allCycles.some((cyc) => cyc.days.some((d) => d.events.some((e) => e.type === "injection")));
+    const hasAnyLab =
+      r.allCycles.some((cyc) => cyc.days.some((d) => d.events.some((e) => e.type === "lab")));
+
+    const legendWrapper = document.createElement("div");
+    legendWrapper.innerHTML = renderLegend(r.schema, hasAnyInjection, hasAnyLab);
+    DOM.graphic.appendChild(legendWrapper);
+
+    // Table: include follow separator
+    if (r.hasFollowUp && r.followSchema) {
+      renderTableAllCycles(r.allCycles, r.followSchema.label, r.cyclesMain.length);
+    } else {
+      renderTableAllCycles(r.allCycles);
+    }
+
+    // Support dropdown is now filled; printing/rendering support can come next
+    updatePrintSupportButton();
+
+    DOM.plan.style.display = "block";
+    DOM.plan.scrollIntoView({ behavior: "smooth" });
+  }
+
+  function updatePrintSupportButton() {
+    if (!DOM.printSupportBtn) return;
+
+    const mainKey = DOM.supportSelect?.value || "---";
+    const followKey = DOM.supportFollowUpSelect?.value || "---";
+
+    const mainSupport = (mainKey !== "---") ? supportSchemas[mainKey] : null;
+    const followSupport = (followKey !== "---") ? supportSchemas[followKey] : null;
+
+    const hasAnySupport =
+      (mainSupport && mainSupport.days && mainSupport.days.length > 0) ||
+      (followSupport && followSupport.days && followSupport.days.length > 0) ||
+      (DOM.gcsfEnabled?.checked) ||
+      (DOM.hasFollowUp?.checked && DOM.gcsfEnabledFollow?.checked);
+
+    DOM.printSupportBtn.style.display = hasAnySupport ? "inline-block" : "none";
+  }
+
+  function rerenderIfNeeded() {
+    if (!AppState.lastRender) return;
+    // just rerender with current inputs/checkbox states if the plan is visible
+    // easiest: trigger "renderAll" but update lastRender’s flags from DOM
+    const r = AppState.lastRender;
+    r.hasFollowUp = !!DOM.hasFollowUp?.checked;
+    renderAll();
+  }
 })();
