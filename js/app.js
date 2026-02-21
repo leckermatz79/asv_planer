@@ -91,9 +91,13 @@
   ========================= */
 
   function getLocale() {
-    // currentLang comes from i18n.js (global lexical binding) in your setup
-    const lang = (window.currentLang) ? window.currentLang : "de";
-    return (window.localeMap && window.localeMap[lang]) || "de-DE";
+    const lang = localStorage.getItem("therapyplanner_lang") || "de";
+
+    if (window.localeMap && window.localeMap[lang]) {
+      return window.localeMap[lang];
+    }
+
+    return lang;
   }
 
   function fmtDate(date) {
@@ -616,15 +620,12 @@
   ========================= */
 
   function renderGraphicOneCycleInto(cycle, targetEl) {
-    const lang = (window.currentLang) ? window.currentLang : "de";
-    const weekdays =
-      (window.weekdayMap && window.weekdayMap[lang]) ? window.weekdayMap[lang]
-      : (window.weekdayMap && window.weekdayMap.de) ? window.weekdayMap.de
-      : ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-
+    const locale = getLocale();
     let html = `
       <div class="weekday-header">
-        ${cycle.days.slice(0, 7).map((d) => `<div>${weekdays[d.date.getDay()]}</div>`).join("")}
+        ${cycle.days.slice(0, 7).map((d) =>
+          `<div>${d.date.toLocaleDateString(locale, { weekday: "long" })}</div>`
+        ).join("")}
       </div>
       <div class="grid">
     `;
@@ -907,4 +908,4 @@
     buildAndStoreStateFromDOM();
     renderAll();
   }
-})();
+})(); 
