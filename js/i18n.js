@@ -28,7 +28,6 @@ window.weekdayMap = {
 /* ======================================================= */
 
 const translations = {
-
   de: {
     therapyPlanCreation: "Therapieplan Erstellung",
     language: "Sprache",
@@ -47,11 +46,12 @@ const translations = {
     fasting: "nüchtern!",
     weekend: "Wochenende",
     holiday: "Feiertag",
+    switchToFollowUp: "Umstellung auf Folgetherapie",
+    followUpTherapy: "Folgetherapie",
     schemaInfo: (days, cycles) =>
       `Dieses Behandlungsschema umfasst ${days} Tage pro Zyklus und wird insgesamt über ${cycles} Zyklen durchgeführt.`,
     footerBlock: `Telefonnummer GynOnko Ambulanz: 0241/6006-1685<br>24/7 Notfall-Rufnummer: 0241/6006-0 (mit diensthabender Gynäkologin verbinden lassen)`
   },
-
   en: {
     therapyPlanCreation: "Treatment Plan Creation",
     language: "Language",
@@ -70,11 +70,12 @@ const translations = {
     fasting: "fasting!",
     weekend: "Weekend",
     holiday: "Public holiday",
+    switchToFollowUp: "Umstellung auf Folgetherapie (#en)",
+    followUpTherapy: "Folgetherapie (#en)",
     schemaInfo: (days, cycles) =>
       `This treatment regimen includes ${days} days per cycle and is administered over ${cycles} cycles.`,
     footerBlock: `Gynecologic Oncology Outpatient Clinic: 0241/6006-1685<br>24/7 Emergency Hotline: 0241/6006-0 (ask to be connected to the on-call gynecologist)`
   },
-
   tr: {
     therapyPlanCreation: "Tedavi Planı Oluşturma",
     language: "Dil",
@@ -93,11 +94,12 @@ const translations = {
     fasting: "aç karnına!",
     weekend: "Hafta sonu",
     holiday: "Resmi tatil",
+    switchToFollowUp: "Umstellung auf Folgetherapie (#tr)",
+    followUpTherapy: "Folgetherapie (#tr)",
     schemaInfo: (days, cycles) =>
       `Bu tedavi şeması her döngüde ${days} gün sürer ve toplamda ${cycles} döngü boyunca uygulanır.`,
     footerBlock: `Jinekolojik Onkoloji Polikliniği: 0241/6006-1685<br>7/24 Acil Telefon Hattı: 0241/6006-0 (nöbetçi jinekolog ile bağlantı kurun)`
   },
-
   pl: {
     therapyPlanCreation: "Tworzenie planu terapii",
     language: "Język",
@@ -116,6 +118,8 @@ const translations = {
     fasting: "na czczo!",
     weekend: "Weekend",
     holiday: "Święto",
+    switchToFollowUp: "Umstellung auf Folgetherapie (#pl)",
+    followUpTherapy: "Folgetherapie (#pl)",
     schemaInfo: (days, cycles) =>
       `Ten schemat leczenia obejmuje ${days} dni na cykl i jest realizowany przez ${cycles} cykli.`,
     footerBlock: `Poradnia Onkologii Ginekologicznej: 0241/6006-1685<br>Całodobowa linia alarmowa: 0241/6006-0 (poproś o połączenie z lekarzem ginekologiem dyżurnym)`
@@ -139,11 +143,12 @@ const translations = {
     fasting: "натощак!",
     weekend: "Выходные",
     holiday: "Праздничный день",
+    switchToFollowUp: "Umstellung auf Folgetherapie (#ru)",
+    followUpTherapy: "Folgetherapie (#ru)",
     schemaInfo: (days, cycles) =>
       `Данная схема лечения включает ${days} дней на цикл и проводится в течение ${cycles} циклов.`,
     footerBlock: `Гинекологическая онкологическая амбулатория: 0241/6006-1685<br>Круглосуточная горячая линия: 0241/6006-0 (попросите соединить с дежурным гинекологом)`
   },
-
   ua: {
     therapyPlanCreation: "Створення плану терапії",
     language: "Мова",
@@ -162,6 +167,8 @@ const translations = {
     fasting: "натще!",
     weekend: "Вихідні",
     holiday: "Святковий день",
+    switchToFollowUp: "Umstellung auf Folgetherapie (#ua)",
+    followUpTherapy: "Folgetherapie (#ua)",
     schemaInfo: (days, cycles) =>
       `Ця схема лікування включає ${days} днів на цикл і проводиться протягом ${cycles} циклів.`,
     footerBlock: `Гінекологічна онкологічна амбулаторія: 0241/6006-1685<br>Цілодобова гаряча лінія: 0241/6006-0 (попросіть з'єднати з черговим гінекологом)`

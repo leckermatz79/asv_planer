@@ -340,33 +340,56 @@
     return x;
   }
 
+  function subtractWorkdays(date, n) {
+    const x = new Date(date);
+    while (n > 0) {
+        x.setDate(x.getDate() - 1);
+        if (!isWeekend(x)) n--;
+    }
+    return x;
+  }
+
   function buildCycles(startDate, schema, extraEvents = []) {
     const cycles = [];
 
     for (let c = 0; c < schema.anzahl_zyklen; c++) {
-      const cycleStart = addDays(startDate, c * schema.zyklus_tage);
+        const cycleStart = addDays(startDate, c * schema.zyklus_tage);
+        const nextCycleStart = addDays(cycleStart, schema.zyklus_tage);
 
-      const days = Array.from({ length: schema.zyklus_tage }, (_, i) => ({
+        const days = Array.from({ length: schema.zyklus_tage }, (_, i) => ({
         day: i + 1,
         date: addDays(cycleStart, i),
         events: []
-      }));
+        }));
 
-      // base events (day-based only in your current JSON)
-      schema.events.forEach((ev) => {
-        if (typeof ev.day === "number" && days[ev.day - 1]) {
-          days[ev.day - 1].events.push(ev);
+        schema.events.forEach(ev => {
+
+        let dayIndex = null;
+
+        if (typeof ev.day === "number") {
+            dayIndex = ev.day;
         }
-      });
 
-      // extra events (e.g. gcsf injections)
-      extraEvents.forEach((ev) => {
-        if (typeof ev.day === "number" && days[ev.day - 1]) {
-          days[ev.day - 1].events.push(ev);
+        if (typeof ev.workdays_before_next_cycle_start === "number") {
+            const target = subtractWorkdays(
+            nextCycleStart,
+            ev.workdays_before_next_cycle_start
+            );
+            dayIndex = Math.round((target - cycleStart) / (24 * 60 * 60 * 1000)) + 1;
         }
-      });
 
-      cycles.push({ index: c + 1, days });
+        if (dayIndex && days[dayIndex - 1]) {
+            days[dayIndex - 1].events.push(ev);
+        }
+        });
+
+        extraEvents.forEach(ev => {
+        if (ev.day && days[ev.day - 1]) {
+            days[ev.day - 1].events.push(ev);
+        }
+        });
+
+        cycles.push({ index: c + 1, days });
     }
 
     return cycles;
@@ -459,7 +482,7 @@
      RENDER: GRAPHIC (1 cycle)
   ========================= */
 
-  function renderGraphicOneCycle(cycle) {
+  function renderGraphicOneCycleInto(cycle, targetEl) {
     const lang = (typeof currentLang !== "undefined" && currentLang) ? currentLang : "de";
     const weekdays =
       (window.weekdayMap && window.weekdayMap[lang]) ? window.weekdayMap[lang]
@@ -507,7 +530,7 @@
           <div class="icon-block">
             <div class="icon">🩸</div>
             <div class="icon-label">
-              ${lab.label || safeT("lab")}
+              ${safeT("lab")}
               ${lab.fasting ? `<br><span style="color:#b91c1c;">⚠️ ${safeT("fasting")}</span>` : ""}
             </div>
           </div>
@@ -531,7 +554,7 @@
     });
 
     html += `</div>`;
-    DOM.graphic.innerHTML = html;
+    targetEl.innerHTML = html;
   }
 
   /* =========================
@@ -561,8 +584,8 @@
           .map((ev) => {
             if (ev.type === "therapy") return ev.drug;
             if (ev.type === "lab") {
-              if (ev.fasting) return `${ev.label || safeT("lab")} – ⚠️ ${safeT("fasting")}`;
-              return ev.label || safeT("lab");
+                if (ev.fasting) return `${safeT("lab")} – ⚠️ ${safeT("fasting")}`;
+            return safeT("lab");
             }
             if (ev.type === "injection") return `💉 ${ev.label || ev.drug || "G-CSF"}`;
             return ev.drug || ev.label || "";
@@ -588,7 +611,7 @@
       if (followUpLabel && mainCycleCount && index === mainCycleCount - 1) {
         html += `
           <tr class="followup-separator">
-            <td colspan="5">Umstellung auf Folgetherapie: ${followUpLabel}</td>
+            <td colspan="5">${safeT("switchToFollowUp")}: ${followUpLabel}</td>
           </tr>
         `;
       }
@@ -602,69 +625,11 @@
      SUBMIT / RENDER ALL
   ========================= */
 
-  function submitHandler(e) {
+  function submitHandler(e){
     e.preventDefault();
-
-    const selected = Object.entries(AppState.schemas).find(
-      ([, s]) => s.label.toLowerCase() === (DOM.schemaInput.value || "").toLowerCase()
-    );
-
-    if (!selected) {
-      alert("Bitte ein gültiges Schema auswählen.");
-      return;
-    }
-
-    const [schemaKey, schema] = selected;
-
-    const startDate = parseDateInput(DOM.startdatum.value);
-    if (!startDate) {
-      alert("Bitte ein gültiges Startdatum wählen.");
-      return;
-    }
-
-    const hasFollowUp = !!DOM.hasFollowUp?.checked;
-
-    // Build G-CSF events
-    const gcsfMain = buildGcsfEvents(DOM.gcsfEnabled, DOM.gcsfSelect, DOM.gcsfDay);
-    const gcsfFollow = buildGcsfEvents(DOM.gcsfEnabledFollow, DOM.gcsfSelectFollow, DOM.gcsfDayFollow);
-
-    // Main cycles
-    const cyclesMain = buildCycles(startDate, schema, gcsfMain.events);
-    let allCycles = [...cyclesMain];
-
-    // Follow-up
-    let followSchema = null;
-    let followKey = null;
-    let cyclesFollow = null;
-
-    if (hasFollowUp) {
-      followKey = DOM.followUpSelect?.value || null;
-      followSchema = followKey ? AppState.schemas[followKey] : null;
-
-      if (followSchema) {
-        const followStart = addDays(startDate, schema.zyklus_tage * schema.anzahl_zyklen);
-        cyclesFollow = buildCycles(followStart, followSchema, gcsfFollow.events);
-        allCycles = [...cyclesMain, ...cyclesFollow];
-      }
-    }
-
-    // Store for re-render on language change
-    AppState.lastRender = {
-      schemaKey,
-      schema,
-      startDate,
-      hasFollowUp,
-      followKey,
-      followSchema,
-      cyclesMain,
-      cyclesFollow,
-      allCycles,
-      gcsfMain,
-      gcsfFollow
-    };
-
+    buildAndStoreStateFromDOM();
     renderAll();
-  }
+  } 
 
   function renderAll() {
     const r = AppState.lastRender;
@@ -678,7 +643,7 @@
 
     // Graphic: show first main cycle
     DOM.graphic.innerHTML = "";
-    renderGraphicOneCycle(r.cyclesMain[0]);
+    renderGraphicOneCycleInto(r.cyclesMain[0], DOM.graphic);
 
     // Legend under graphic
     const hasAnyInjection =
@@ -689,6 +654,45 @@
     const legendWrapper = document.createElement("div");
     legendWrapper.innerHTML = renderLegend(r.schema, hasAnyInjection, hasAnyLab);
     DOM.graphic.appendChild(legendWrapper);
+
+    if (r.hasFollowUp && r.followSchema && r.cyclesFollow) {
+
+      const followWrapper = document.createElement("div");
+      followWrapper.classList.add("page-break-before");
+
+      followWrapper.innerHTML = `
+        <h2 style="margin-top:2rem;">
+          ${safeT("followUpTherapy")}: ${r.followSchema.label}
+        </h2>
+      `;
+
+      const followGraphic = document.createElement("div");
+      followWrapper.appendChild(followGraphic);
+      DOM.graphic.appendChild(followWrapper);
+
+      // Render first follow-up cycle
+      renderGraphicOneCycleInto(r.cyclesFollow[0], followGraphic);
+
+      // Determine if follow-up has injections or labs
+      const followHasInjection =
+        r.cyclesFollow.some((cyc) =>
+          cyc.days.some((d) => d.events.some((e) => e.type === "injection"))
+        );
+
+      const followHasLab =
+        r.cyclesFollow.some((cyc) =>
+          cyc.days.some((d) => d.events.some((e) => e.type === "lab"))
+        );
+
+      // Add legend + schema info for follow-up
+      const followLegendWrapper = document.createElement("div");
+      followLegendWrapper.innerHTML = renderLegend(
+        r.followSchema,
+        followHasInjection,
+        followHasLab
+      );
+      followWrapper.appendChild(followLegendWrapper);
+    }
 
     // Table: include follow separator
     if (r.hasFollowUp && r.followSchema) {
@@ -722,12 +726,60 @@
     DOM.printSupportBtn.style.display = hasAnySupport ? "inline-block" : "none";
   }
 
+  function buildAndStoreStateFromDOM() {
+
+    const selected = Object.entries(AppState.schemas).find(
+      ([, s]) => s.label.toLowerCase() === (DOM.schemaInput.value || "").toLowerCase()
+    );
+
+    if (!selected) return;
+
+    const [schemaKey, schema] = selected;
+
+    const startDate = parseDateInput(DOM.startdatum.value);
+    if (!startDate) return;
+
+    const hasFollowUp = !!DOM.hasFollowUp?.checked;
+
+    const gcsfMain = buildGcsfEvents(DOM.gcsfEnabled, DOM.gcsfSelect, DOM.gcsfDay);
+    const gcsfFollow = buildGcsfEvents(DOM.gcsfEnabledFollow, DOM.gcsfSelectFollow, DOM.gcsfDayFollow);
+
+    const cyclesMain = buildCycles(startDate, schema, gcsfMain.events);
+    let allCycles = [...cyclesMain];
+
+    let followSchema = null;
+    let followKey = null;
+    let cyclesFollow = null;
+
+    if (hasFollowUp) {
+      followKey = DOM.followUpSelect?.value || null;
+      followSchema = followKey ? AppState.schemas[followKey] : null;
+
+      if (followSchema) {
+        const followStart = addDays(startDate, schema.zyklus_tage * schema.anzahl_zyklen);
+        cyclesFollow = buildCycles(followStart, followSchema, gcsfFollow.events);
+        allCycles = [...cyclesMain, ...cyclesFollow];
+      }
+    }
+
+    AppState.lastRender = {
+      schemaKey,
+      schema,
+      startDate,
+      hasFollowUp,
+      followKey,
+      followSchema,
+      cyclesMain,
+      cyclesFollow,
+      allCycles,
+      gcsfMain,
+      gcsfFollow
+    };
+  }
+
   function rerenderIfNeeded() {
     if (!AppState.lastRender) return;
-    // just rerender with current inputs/checkbox states if the plan is visible
-    // easiest: trigger "renderAll" but update lastRender’s flags from DOM
-    const r = AppState.lastRender;
-    r.hasFollowUp = !!DOM.hasFollowUp?.checked;
+    buildAndStoreStateFromDOM();
     renderAll();
   }
 })();
