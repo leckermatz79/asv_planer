@@ -908,4 +908,35 @@
     buildAndStoreStateFromDOM();
     renderAll();
   }
-})(); 
+  /* =========================
+     PRINT FUNCTIONS
+  ========================= */
+
+  function clearPrintClasses() {
+    document.body.classList.remove("print-graphic");
+    document.body.classList.remove("print-table");
+    document.body.classList.remove("print-support");
+  }
+
+  window.printGraphic = function () {
+    clearPrintClasses();
+    document.body.classList.add("print-graphic");
+    window.print();
+    setTimeout(clearPrintClasses, 100);
+  };
+
+  window.printTable = function () {
+    clearPrintClasses();
+    document.body.classList.add("print-table");
+    window.print();
+    setTimeout(clearPrintClasses, 100);
+  };
+
+  window.printSupport = function () {
+    clearPrintClasses();
+    document.body.classList.add("print-support");
+    window.print();
+    setTimeout(clearPrintClasses, 100);
+  };
+
+})();
