@@ -23,7 +23,7 @@ window.CHEMO_SCHEMAS = {
     ]
   },
   "Paclitaxel_qw": {
-    "label": "Paclitaxel wöchentlich",
+    "label": "Paclitaxel qw",
     "zyklus_tage": 7,
     "anzahl_zyklen": 12,
     "events": [
@@ -31,15 +31,28 @@ window.CHEMO_SCHEMAS = {
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 }
     ]
   },
-  "Paclitaxel_Pembro_q3w": {
-    "label": "Paclitaxel qw, Pembrolizumab q3w",
+    "Paclitaxel_Carbo_qw": {
+    "label": "Paclitaxel/Carboplatin qw",
+    "zyklus_tage": 7,
+    "anzahl_zyklen": 12,
+    "events": [
+      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "day": 1 },    
+      { "type": "therapy", "drug": "Carboplatin", "short": "Cb", "day": 1 },               
+      { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 2 },
+    ]
+  },
+  "Paclitaxel_Carbo_qw_Pembro_q3w": {
+    "label": "Paclitaxel/Carboplatin qw, Pembrolizumab q3w",
     "zyklus_tage": 21,
     "anzahl_zyklen": 4,
     "events": [
       { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "day": 1 },    
-      { "type": "therapy", "drug": "Pembrolizumab", "short": "Pem", "day": 1 },      
+      { "type": "therapy", "drug": "Carboplatin", "short": "Cb", "day": 1 },  
+      { "type": "therapy", "drug": "Pembrolizumab", "short": "Pem", "day": 1 },    
       { "type": "therapy", "drug": "Paclitaxel", "short": "Pac", "day": 8 },
-      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac","day": 15 },         
+      { "type": "therapy", "drug": "Carboplatin", "short": "Cb", "day": 8 },
+      { "type": "therapy", "drug": "Paclitaxel", "short": "Pac","day": 15 },
+      { "type": "therapy", "drug": "Carboplatin", "short": "Cb", "day": 15 },         
       { "type": "lab", "label": "Labor", "fasting": true, "workdays_before_next_cycle_start": 2 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 7 },
       { "type": "lab", "label": "Labor", "workdays_before_next_cycle_start": 12 }
@@ -72,7 +85,7 @@ window.CHEMO_SCHEMAS = {
     ]
   },
   "Paclitaxel_Tratuzumab_Pertuzumab_q3w": {
-    "label": "Paclitaxel wöchentlich, Trastuzumab + Pertuzumab alle 3 Wochen",
+    "label": "Paclitaxel qw, Trastuzumab + Pertuzumab q3w",
     "zyklus_tage": 21,
     "anzahl_zyklen": 4,
     "events": [

@@ -263,7 +263,10 @@
           dayBox.style.borderRadius = "12px";
           dayBox.style.padding = "10px";
           dayBox.style.background = "#f9fafb";
-
+          if (isHoliday(dayObj.date)) {
+            dayBox.style.outline = "2px solid #2563eb";
+            dayBox.title = safeT("holiday");
+          }
           dayBox.innerHTML = `
             <div style="font-weight:700;margin-bottom:6px;">
               ${fmtDate(dayObj.date)}<br>
@@ -459,6 +462,56 @@
   }
 
   /* =========================
+    NRW HOLIDAYS
+  ========================= */
+
+  function getEasterDate(year) {
+    const f = Math.floor;
+    const G = year % 19;
+    const C = f(year / 100);
+    const H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30;
+    const I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11));
+    const J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7;
+    const L = I - J;
+    const month = 3 + f((L + 40) / 44);
+    const day = L + 28 - 31 * f(month / 4);
+    return new Date(year, month - 1, day);
+  }
+
+  function getHolidaysNRW(year) {
+    const easter = getEasterDate(year);
+
+    const holidays = [
+      new Date(year, 0, 1),   // Neujahr
+      new Date(year, 4, 1),   // Tag der Arbeit
+      new Date(year, 9, 3),   // Tag der Deutschen Einheit
+      new Date(year, 10, 1),  // Allerheiligen
+      new Date(year, 11, 25), // 1. Weihnachtstag
+      new Date(year, 11, 26), // 2. Weihnachtstag
+    ];
+
+    // Bewegliche Feiertage
+    holidays.push(new Date(easter.getFullYear(), easter.getMonth(), easter.getDate() - 2));  // Karfreitag
+    holidays.push(new Date(easter.getFullYear(), easter.getMonth(), easter.getDate() + 1));  // Ostermontag
+    holidays.push(new Date(easter.getFullYear(), easter.getMonth(), easter.getDate() + 39)); // Christi Himmelfahrt
+    holidays.push(new Date(easter.getFullYear(), easter.getMonth(), easter.getDate() + 50)); // Pfingstmontag
+    holidays.push(new Date(easter.getFullYear(), easter.getMonth(), easter.getDate() + 60)); // Fronleichnam
+
+    return holidays;
+  }
+
+  function isHoliday(date) {
+    const year = date.getFullYear();
+    const holidays = getHolidaysNRW(year);
+
+    return holidays.some(h =>
+      h.getFullYear() === date.getFullYear() &&
+      h.getMonth() === date.getMonth() &&
+      h.getDate() === date.getDate()
+    );
+  }
+
+  /* =========================
      BUILD CYCLES
      (supports injections + labs + therapies)
   ========================= */
@@ -473,7 +526,8 @@
     const x = new Date(date);
     while (n > 0) {
         x.setDate(x.getDate() - 1);
-        if (!isWeekend(x)) n--;
+        if (!isWeekend(x) && !isHoliday(x)) n--;
+        
     }
     return x;
   }
@@ -669,7 +723,8 @@
         : "";
 
       html += `
-        <div class="day ${isWeekend(d.date) ? "weekend" : ""}">
+        <div class="day ${isWeekend(d.date) ? "weekend" : ""} ${isHoliday(d.date) ? "holiday" : ""}"
+             title="${isHoliday(d.date) ? safeT("holiday") : ""}">
           ${barHtml}
           <div class="day-content">
             ${iconsHtml}
@@ -721,6 +776,11 @@
 
         let hint = "";
         if (isWeekend(d.date)) hint = `⚠️ ${safeT("weekend")}`;
+        if (isHoliday(d.date)) {
+          hint = hint
+            ? hint + ` | ⚠️ ${safeT("holiday")}`
+            : `⚠️ ${safeT("holiday")}`;
+        }
 
         html += `
           <tr>
