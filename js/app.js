@@ -92,7 +92,7 @@
 
   function getLocale() {
     // currentLang comes from i18n.js (global lexical binding) in your setup
-    const lang = (typeof currentLang !== "undefined" && currentLang) ? currentLang : "de";
+    const lang = (window.currentLang) ? window.currentLang : "de";
     return (window.localeMap && window.localeMap[lang]) || "de-DE";
   }
 
@@ -164,27 +164,160 @@
   let supportSchemas = null;
 
   function initSupportSchemas() {
-    supportSchemas = {
-      "None": { label: "Keine Begleitmedikation", version: "–", days: [] },
+    // In future: replace this with fetch('/js/supportSchemas.js') or similar
+    supportSchemas = window.supportSchemasData || {
+      "None": { label: "None", version: "–", days: [] },
       "Akynzeo_Olanzapin": {
         label: "Akynzeo – Olanzapin",
         version: "v1.0 – 01/2026",
         days: [
           { day: 1, meds: [
-            { name: "Akynzeo 300/0,5 mg", dosage: "1-0-0", note: "morgens" },
-            { name: "Olanzapin 5 mg", dosage: "1-0-0", note: "morgens" }
+            { name: "Akynzeo 300/0,5 mg", dosage: "1-0-0", note: "morning" },
+            { name: "Olanzapin 5 mg", dosage: "1-0-0", note: "morning" }
           ]},
-          { day: 2, meds: [{ name: "Olanzapin 5 mg", dosage: "0-0-1", note: "abends" }]},
-          { day: 3, meds: [{ name: "Olanzapin 5 mg", dosage: "0-0-1", note: "abends" }]},
-          { day: 4, meds: [{ name: "Olanzapin 5 mg", dosage: "0-0-1", note: "abends" }]}
+          { day: 2, meds: [{ name: "Olanzapin 5 mg", dosage: "0-0-1", note: "evening" }]},
+          { day: 3, meds: [{ name: "Olanzapin 5 mg", dosage: "0-0-1", note: "evening" }]},
+          { day: 4, meds: [{ name: "Olanzapin 5 mg", dosage: "0-0-1", note: "evening" }]}
         ]
-      },
-      "Akynzeo_mono": {
-        label: "Akynzeo mono",
-        version: "v1.0 – 02/2026",
-        days: [{ day: 1, meds: [{ name: "Akynzeo 300/0,5 mg", dosage: "1-0-0", note: "morgens" }]}]
       }
     };
+  }
+  // =========================
+  // SUPPORT PLAN RENDERER
+  // =========================
+  function renderSupportPlan(r) {
+    if (!DOM.supportGraphic) return;
+
+    DOM.supportGraphic.innerHTML = "";
+
+    const mainKey = DOM.supportSelect?.value || "---";
+    const followKey = DOM.supportFollowUpSelect?.value || "---";
+
+    const mainSupport = (mainKey !== "---") ? supportSchemas[mainKey] : null;
+    const followSupport = (followKey !== "---") ? supportSchemas[followKey] : null;
+
+    if (!mainSupport && !followSupport && !r.gcsfMain.config && !r.gcsfFollow.config) {
+      return;
+    }
+
+    const container = document.createElement("div");
+
+    r.allCycles.forEach((cycle, idx) => {
+
+      const isFollow = r.hasFollowUp && idx >= r.cyclesMain.length;
+
+      const currentSupport = isFollow ? followSupport : mainSupport;
+      const currentGcsf = isFollow ? r.gcsfFollow.config : r.gcsfMain.config;
+      const label = isFollow && r.followSchema
+        ? r.followSchema.label
+        : r.schema.label;
+
+      const hasSupportDays = currentSupport && currentSupport.days?.length > 0;
+      const hasGcsf = !!currentGcsf;
+
+      if (!hasSupportDays && !hasGcsf) return;
+
+      const block = document.createElement("div");
+      block.classList.add("support-cycle");
+      block.style.marginTop = "2rem";
+
+      block.innerHTML = `<h2>${safeT("cycle")} ${cycle.index} – ${label}</h2>`;
+
+      const totalDays = cycle.days.length;
+      const weeksToRender = new Set();
+
+      // 🔹 Wochen mit Support ermitteln
+      if (currentSupport) {
+        currentSupport.days.forEach(supportDay => {
+          const weekIndex = Math.floor((supportDay.day - 1) / 7);
+          weeksToRender.add(weekIndex);
+        });
+      }
+
+      // 🔹 Wochen mit G-CSF ermitteln
+      if (currentGcsf) {
+        const gcsfDays = currentGcsf.multipleDays || [currentGcsf.day];
+        gcsfDays.forEach(d => {
+          const weekIndex = Math.floor((d - 1) / 7);
+          weeksToRender.add(weekIndex);
+        });
+      }
+
+      // 🔹 Sortieren
+      const sortedWeeks = Array.from(weeksToRender).sort((a,b)=>a-b);
+
+      sortedWeeks.forEach(w => {
+
+        const weekGrid = document.createElement("div");
+        weekGrid.classList.add("support-week");
+        weekGrid.style.display = "grid";
+        weekGrid.style.gridTemplateColumns = "repeat(7,1fr)";
+        weekGrid.style.gap = "10px";
+        weekGrid.style.marginBottom = "1.5rem";
+
+        for (let i = 0; i < 7; i++) {
+
+          const dayIndex = w * 7 + i;
+          if (dayIndex >= totalDays) break;
+
+          const dayObj = cycle.days[dayIndex];
+
+          const dayBox = document.createElement("div");
+          dayBox.style.border = "1px solid #e5e7eb";
+          dayBox.style.borderRadius = "12px";
+          dayBox.style.padding = "10px";
+          dayBox.style.background = "#f9fafb";
+
+          dayBox.innerHTML = `
+            <div style="font-weight:700;margin-bottom:6px;">
+              ${fmtDate(dayObj.date)}<br>
+              <span style="font-size:0.75rem;color:#6b7280;">d${dayObj.day}</span>
+            </div>
+          `;
+
+          // Support
+          if (currentSupport) {
+            const match = currentSupport.days.find(d => d.day === dayObj.day);
+            if (match) {
+              match.meds.forEach(med => {
+                dayBox.innerHTML += `
+                  <div style="margin-bottom:6px;padding:6px;background:white;border-radius:8px;font-size:0.8rem;">
+                    <strong>${med.name}</strong><br>
+                    ${med.dosage}${med.noteKey ? ' – ' + safeT(med.noteKey) : ''}
+                  </div>
+                `;
+              });
+            }
+          }
+
+          // G-CSF
+          if (currentGcsf) {
+            const gcsfDays = currentGcsf.multipleDays || [currentGcsf.day];
+            if (gcsfDays.includes(dayObj.day)) {
+              dayBox.innerHTML += `
+                <div style="margin-bottom:6px;padding:6px;background:#e0f2fe;border-radius:8px;font-size:0.8rem;">
+                  <strong>${currentGcsf.drug}</strong><br>${safeT("injection")}
+                </div>
+              `;
+            }
+          }
+
+          weekGrid.appendChild(dayBox);
+        }
+
+        block.appendChild(weekGrid);
+      });
+      container.appendChild(block);
+    });
+
+    container.innerHTML += `
+      <div style="margin-top:2rem;padding:1rem;border-top:2px solid #333;font-size:0.9rem;">
+        <strong>${safeT("nausea")}</strong><br>
+        ${safeT("ondansetronHint")}
+      </div>
+    `;
+
+    DOM.supportGraphic.appendChild(container);
   }
 
   /* =========================
@@ -483,7 +616,7 @@
   ========================= */
 
   function renderGraphicOneCycleInto(cycle, targetEl) {
-    const lang = (typeof currentLang !== "undefined" && currentLang) ? currentLang : "de";
+    const lang = (window.currentLang) ? window.currentLang : "de";
     const weekdays =
       (window.weekdayMap && window.weekdayMap[lang]) ? window.weekdayMap[lang]
       : (window.weekdayMap && window.weekdayMap.de) ? window.weekdayMap.de
@@ -701,6 +834,9 @@
       renderTableAllCycles(r.allCycles);
     }
 
+    // Support plan rendering
+    renderSupportPlan(r);
+
     // Support dropdown is now filled; printing/rendering support can come next
     updatePrintSupportButton();
 
@@ -711,19 +847,8 @@
   function updatePrintSupportButton() {
     if (!DOM.printSupportBtn) return;
 
-    const mainKey = DOM.supportSelect?.value || "---";
-    const followKey = DOM.supportFollowUpSelect?.value || "---";
-
-    const mainSupport = (mainKey !== "---") ? supportSchemas[mainKey] : null;
-    const followSupport = (followKey !== "---") ? supportSchemas[followKey] : null;
-
-    const hasAnySupport =
-      (mainSupport && mainSupport.days && mainSupport.days.length > 0) ||
-      (followSupport && followSupport.days && followSupport.days.length > 0) ||
-      (DOM.gcsfEnabled?.checked) ||
-      (DOM.hasFollowUp?.checked && DOM.gcsfEnabledFollow?.checked);
-
-    DOM.printSupportBtn.style.display = hasAnySupport ? "inline-block" : "none";
+    const hasSupportContent = DOM.supportGraphic && DOM.supportGraphic.innerHTML.trim() !== "";
+    DOM.printSupportBtn.style.display = hasSupportContent ? "inline-block" : "none";
   }
 
   function buildAndStoreStateFromDOM() {

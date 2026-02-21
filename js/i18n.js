@@ -29,7 +29,7 @@ window.weekdayMap = {
 
 const translations = {
   de: {
-    therapyPlanCreation: "Therapieplan Erstellung",
+    therapyPlanCreation: "Therapieplan",
     language: "Sprache",
     patient: "Patient",
     birthdate: "Geburtsdatum",
@@ -50,10 +50,17 @@ const translations = {
     followUpTherapy: "Folgetherapie",
     schemaInfo: (days, cycles) =>
       `Dieses Behandlungsschema umfasst ${days} Tage pro Zyklus und wird insgesamt über ${cycles} Zyklen durchgeführt.`,
-    footerBlock: `Telefonnummer GynOnko Ambulanz: 0241/6006-1685<br>24/7 Notfall-Rufnummer: 0241/6006-0 (mit diensthabender Gynäkologin verbinden lassen)`
+    footerBlock: `Telefonnummer GynOnko Ambulanz: 0241/6006-1685<br>24/7 Notfall-Rufnummer: 0241/6006-0 (mit diensthabender Gynäkologin verbinden lassen)`,
+    morning: "(morgens)",
+    noon: "(mittags)",
+    evening: "(abends)",
+    injection: "Injektion",
+    nausea: "Bei Übelkeit:",
+    ondansetronHint:
+      "Einnahme einer 8 mg Ondansetron Schmelztablette (im Mund zergehen lassen). Falls keine Besserung nach 20–30 Minuten: Notfallnummer anrufen."
   },
   en: {
-    therapyPlanCreation: "Treatment Plan Creation",
+    therapyPlanCreation: "Treatment Plan",
     language: "Language",
     patient: "Patient",
     birthdate: "Date of Birth",
@@ -70,14 +77,21 @@ const translations = {
     fasting: "fasting!",
     weekend: "Weekend",
     holiday: "Public holiday",
-    switchToFollowUp: "Umstellung auf Folgetherapie (#en)",
-    followUpTherapy: "Folgetherapie (#en)",
+    switchToFollowUp: "Switch to Follow-Up Therapy",
+    followUpTherapy: "Follow-Up Therapy",
     schemaInfo: (days, cycles) =>
       `This treatment regimen includes ${days} days per cycle and is administered over ${cycles} cycles.`,
-    footerBlock: `Gynecologic Oncology Outpatient Clinic: 0241/6006-1685<br>24/7 Emergency Hotline: 0241/6006-0 (ask to be connected to the on-call gynecologist)`
+    footerBlock: `Gynecologic Oncology Outpatient Clinic: 0241/6006-1685<br>24/7 Emergency Hotline: 0241/6006-0 (ask to be connected to the on-call gynecologist)`,
+    morning: "(morning)",
+    noon: "(noon)",
+    evening: "(evening)",
+    injection: "Injection",
+    nausea: "In case of nausea:",
+    ondansetronHint:
+      "Take one 8 mg Ondansetron melt tablet (let it dissolve in your mouth). If no improvement after 20–30 minutes: Call emergency number."  
   },
   tr: {
-    therapyPlanCreation: "Tedavi Planı Oluşturma",
+    therapyPlanCreation: "Tedavi Planı",
     language: "Dil",
     patient: "Hasta",
     birthdate: "Doğum Tarihi",
@@ -94,14 +108,21 @@ const translations = {
     fasting: "aç karnına!",
     weekend: "Hafta sonu",
     holiday: "Resmi tatil",
-    switchToFollowUp: "Umstellung auf Folgetherapie (#tr)",
-    followUpTherapy: "Folgetherapie (#tr)",
+    switchToFollowUp: "Takip tedavisine geçin",
+    followUpTherapy: "Takip Tedavisi",
     schemaInfo: (days, cycles) =>
       `Bu tedavi şeması her döngüde ${days} gün sürer ve toplamda ${cycles} döngü boyunca uygulanır.`,
-    footerBlock: `Jinekolojik Onkoloji Polikliniği: 0241/6006-1685<br>7/24 Acil Telefon Hattı: 0241/6006-0 (nöbetçi jinekolog ile bağlantı kurun)`
+    footerBlock: `Jinekolojik Onkoloji Polikliniği: 0241/6006-1685<br>7/24 Acil Telefon Hattı: 0241/6006-0 (nöbetçi jinekolog ile bağlantı kurun)`,
+    morning: "(sabah)",
+    noon: "(öğle)",
+    evening: "(akşam)",
+    injection: "Enjeksiyon",
+    nausea: "Bulantı durumunda:",
+    ondansetronHint:
+      "Bir adet 8 mg Ondansetron eritilebilir tablet alın (ağzınızda eritin). 20–30 dakika sonra iyileşme olmazsa: Acil numarayı arayın."
   },
   pl: {
-    therapyPlanCreation: "Tworzenie planu terapii",
+    therapyPlanCreation: "Planu terapii",
     language: "Język",
     patient: "Pacjent",
     birthdate: "Data urodzenia",
@@ -118,15 +139,22 @@ const translations = {
     fasting: "na czczo!",
     weekend: "Weekend",
     holiday: "Święto",
-    switchToFollowUp: "Umstellung auf Folgetherapie (#pl)",
-    followUpTherapy: "Folgetherapie (#pl)",
+    switchToFollowUp: "Przejdź do terapii uzupełniającej",
+    followUpTherapy: "Terapia uzupełniająca",
     schemaInfo: (days, cycles) =>
       `Ten schemat leczenia obejmuje ${days} dni na cykl i jest realizowany przez ${cycles} cykli.`,
-    footerBlock: `Poradnia Onkologii Ginekologicznej: 0241/6006-1685<br>Całodobowa linia alarmowa: 0241/6006-0 (poproś o połączenie z lekarzem ginekologiem dyżurnym)`
+    footerBlock: `Poradnia Onkologii Ginekologicznej: 0241/6006-1685<br>Całodobowa linia alarmowa: 0241/6006-0 (poproś o połączenie z lekarzem ginekologiem dyżurnym)`,
+    morning: "(rano)",
+    noon: "(w południe)",
+    evening: "(wieczorem)",
+    injection: "Zastrzyk",
+    nausea: "W przypadku nudności:",
+    ondansetronHint:
+      "Weź jedną tabletkę do rozpuszczania 8 mg Ondansetronu (niech się rozpuści w ustach). Jeśli po 20–30 minutach nie będzie poprawy: Zadzwoń pod numer alarmowy."
   },
 
   ru: {
-    therapyPlanCreation: "Создание плана терапии",
+    therapyPlanCreation: "Плана терапии",
     language: "Язык",
     patient: "Пациент",
     birthdate: "Дата рождения",
@@ -143,14 +171,21 @@ const translations = {
     fasting: "натощак!",
     weekend: "Выходные",
     holiday: "Праздничный день",
-    switchToFollowUp: "Umstellung auf Folgetherapie (#ru)",
-    followUpTherapy: "Folgetherapie (#ru)",
+    switchToFollowUp: "Перейти к поддерживающей терапии",
+    followUpTherapy: "Поддерживающая терапия",
     schemaInfo: (days, cycles) =>
       `Данная схема лечения включает ${days} дней на цикл и проводится в течение ${cycles} циклов.`,
-    footerBlock: `Гинекологическая онкологическая амбулатория: 0241/6006-1685<br>Круглосуточная горячая линия: 0241/6006-0 (попросите соединить с дежурным гинекологом)`
+    footerBlock: `Гинекологическая онкологическая амбулатория: 0241/6006-1685<br>Круглосуточная горячая линия: 0241/6006-0 (попросите соединить с дежурным гинекологом)`,
+    morning: "(утром)",
+    noon: "(в полдень)",
+    evening: "(вечером)",
+    injection: "Инъекция",
+    nausea: "При тошноте:",
+    ondansetronHint:
+      "Примите одну таблетку для рассасывания 8 мг Ондансетрона (пусть растворится во рту). Если через 20–30 минут не будет улучшения: Позвоните по экстренному номеру."
   },
   ua: {
-    therapyPlanCreation: "Створення плану терапії",
+    therapyPlanCreation: "Плану терапії",
     language: "Мова",
     patient: "Пацієнт",
     birthdate: "Дата народження",
@@ -167,11 +202,18 @@ const translations = {
     fasting: "натще!",
     weekend: "Вихідні",
     holiday: "Святковий день",
-    switchToFollowUp: "Umstellung auf Folgetherapie (#ua)",
-    followUpTherapy: "Folgetherapie (#ua)",
+    switchToFollowUp: "Перейти до терапії після основної",
+    followUpTherapy: "Терапія після основної",
     schemaInfo: (days, cycles) =>
       `Ця схема лікування включає ${days} днів на цикл і проводиться протягом ${cycles} циклів.`,
-    footerBlock: `Гінекологічна онкологічна амбулаторія: 0241/6006-1685<br>Цілодобова гаряча лінія: 0241/6006-0 (попросіть з'єднати з черговим гінекологом)`
+    footerBlock: `Гінекологічна онкологічна амбулаторія: 0241/6006-1685<br>Цілодобова гаряча лінія: 0241/6006-0 (попросіть з'єднати з черговим гінекологом)`,
+    morning: "(вранці)",
+    noon: "(в полудень)",
+    evening: "(вечором)",
+    injection: "Ін'єкція",
+    nausea: "При нудоті:",
+    ondansetronHint:
+      "Прийміть одну таблетку для розсмоктування 8 мг Ондансетрона (нехай розчиниться у роті). Якщо через 20–30 хвилин не буде покращення: Зателефонуйте за екстреним номером."
   }
 
   // weitere Sprachen hier ergänzen
