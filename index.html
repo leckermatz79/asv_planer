@@ -14,20 +14,24 @@
 
 <body>
 <div class="container">
+<div class="page-header">
   <h1 id="title" data-i18n="therapyPlanCreation"></h1>
 
-  <form id="therapyForm">
+  <div class="language-switch">
     <label>
       <span data-i18n="language"></span>
-        <select id="languageSelect">
-          <option value="de">Deutsch 🇩🇪 </option>
-          <option value="en">English 🇬🇧 </option>
-          <option value="tr">Türkçe 🇹🇷 </option>
-          <option value="pl">Polski 🇵🇱 </option>
-          <option value="ru">Русский 🇷🇺 </option>
-          <option value="ua">Українська 🇺🇦 </option>
-        </select>
+      <select id="languageSelect">
+        <option value="de">Deutsch 🇩🇪</option>
+        <option value="en">English 🇬🇧</option>
+        <option value="tr">Türkçe 🇹🇷</option>
+        <option value="pl">Polski 🇵🇱</option>
+        <option value="ru">Русский 🇷🇺</option>
+        <option value="ua">Українська 🇺🇦</option>
+      </select>
     </label>
+  </div>
+</div>
+  <form id="therapyForm">
     <label>Vorname<input id="vorname" required></label>
     <label>Nachname<input id="nachname" required></label>
     <label>Geburtsdatum (optional)

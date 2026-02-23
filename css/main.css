@@ -21,9 +21,35 @@
   .container { max-width:1100px; margin:auto; }
 
 /* ==============================
-   3. FORM
+   3. FORM AND LANGUAGE SELECTOR
 ============================== */
-  form, .plan {
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 0 1.5rem;
+}
+
+.page-header h1 {
+  margin: 0;
+}
+
+.language-switch label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.language-switch select {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  border-radius: 8px;
+}
+
+form, .plan {
     background:#fff; padding:1.5rem; border-radius:12px; margin-bottom:2rem;
     box-shadow:0 10px 25px rgba(0,0,0,0.08);
   }
