@@ -169,6 +169,14 @@ form, .plan {
    4. GRAPHIC
 ============================== */
   /* ===== Grafik-Styles ===== */
+
+  .plan-headline {
+    margin: 0 0 1rem 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #111;
+  }
+
   .weekday-header{
     display:grid; grid-template-columns:repeat(7,1fr);
     text-align:center; font-weight:600; font-size:0.75rem;
@@ -348,6 +356,11 @@ form, .plan {
     page-break-before: always;     /* alt */
     break-before: page;            /* modern */
   }
+/* Elemente nur für Druck sichtbar */
+.print-only {
+  display: none;
+}
+
 /* ==============================
    6. PRINT
 ============================== */
@@ -356,7 +369,8 @@ form, .plan {
 
   form,
   .no-print,
-  h1#title {
+  h1#title,
+  .page-header {
     display: none !important;
   }
 
@@ -376,8 +390,15 @@ form, .plan {
     border: none;
     padding: 0;
   }
-
+  .print-footer-clone {
+    margin-top: 1rem;
+    padding-top: 0.2rem;
+    border-top: 1px solid #000;
+    font-size: 0.85rem;
+  }
   /* Standard: alles verstecken */
+  #title,
+  .language-switch,
   #graphic,
   #legend,
   #table,
@@ -386,13 +407,34 @@ form, .plan {
   #supportPlan {
     display: none;
   }
+  
+  body.print-graphic #patient {
+    display: none !important;
+  }
 
   /* ===== Grafikdruck ===== */
-  body.print-graphic #graphic,
-  body.print-graphic #legend,
-  body.print-graphic #patient,
-  body.print-graphic #print-footer {
+
+  body.print-graphic #graphic {
     display: block !important;
+  }
+
+  body.print-graphic #graphic * {
+    visibility: visible !important;
+  }
+
+  /* Globalen Footer im Grafikdruck NICHT anzeigen */
+  body.print-graphic #print-footer {
+    display: none !important;
+  }
+
+  /* Print-only Elemente sichtbar */
+  body.print-graphic .print-only {
+    display: block !important;
+  }
+
+  /* Bildschirm-Elemente ausblenden */
+  body.print-graphic .no-print {
+    display: none !important;
   }
 
   body.print-graphic {

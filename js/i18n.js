@@ -49,7 +49,7 @@ const translations = {
     switchToFollowUp: "Umstellung auf Folgetherapie",
     followUpTherapy: "Folgetherapie",
     schemaInfo: (days, cycles) =>
-      `Dieses Behandlungsschema umfasst ${days} Tage pro Zyklus und wird insgesamt über ${cycles} Zyklen durchgeführt.`,
+      `Dieses Behandlungsschema umfasst <strong>${days} Tage pro Zyklus</strong> und wird insgesamt über <strong>${cycles} Zyklen </strong>durchgeführt.`,
     footerBlock: `Telefonnummer GynOnko Ambulanz: 0241/6006-1685<br>24/7 Notfall-Rufnummer: 0241/6006-0 (mit diensthabender Gynäkologin verbinden lassen)`,
     morning: "(morgens)",
     noon: "(mittags)",
@@ -80,7 +80,7 @@ const translations = {
     switchToFollowUp: "Switch to Follow-Up Therapy",
     followUpTherapy: "Follow-Up Therapy",
     schemaInfo: (days, cycles) =>
-      `This treatment regimen includes ${days} days per cycle and is administered over ${cycles} cycles.`,
+      `This treatment regimen includes <strong>${days} days per cycle</strong> and is administered over <strong>${cycles} cycles</strong>.`,
     footerBlock: `Gynecologic Oncology Outpatient Clinic: 0241/6006-1685<br>24/7 Emergency Hotline: 0241/6006-0 (ask to be connected to the on-call gynecologist)`,
     morning: "(morning)",
     noon: "(noon)",
@@ -111,7 +111,7 @@ const translations = {
     switchToFollowUp: "Takip tedavisine geçin",
     followUpTherapy: "Takip Tedavisi",
     schemaInfo: (days, cycles) =>
-      `Bu tedavi şeması her döngüde ${days} gün sürer ve toplamda ${cycles} döngü boyunca uygulanır.`,
+      `Bu tedavi şeması her döngüde <strong>${days} gün sürer</strong> ve toplamda <strong>${cycles} döngü boyunca uygulanır</strong>.`,
     footerBlock: `Jinekolojik Onkoloji Polikliniği: 0241/6006-1685<br>7/24 Acil Telefon Hattı: 0241/6006-0 (nöbetçi jinekolog ile bağlantı kurun)`,
     morning: "(sabah)",
     noon: "(öğle)",
@@ -142,7 +142,7 @@ const translations = {
     switchToFollowUp: "Przejdź do terapii uzupełniającej",
     followUpTherapy: "Terapia uzupełniająca",
     schemaInfo: (days, cycles) =>
-      `Ten schemat leczenia obejmuje ${days} dni na cykl i jest realizowany przez ${cycles} cykli.`,
+      `Ten schemat leczenia obejmuje <strong>${days} dni na cykl</strong> i jest realizowany przez <strong>${cycles} cykli</strong>.`,
     footerBlock: `Poradnia Onkologii Ginekologicznej: 0241/6006-1685<br>Całodobowa linia alarmowa: 0241/6006-0 (poproś o połączenie z lekarzem ginekologiem dyżurnym)`,
     morning: "(rano)",
     noon: "(w południe)",
@@ -174,7 +174,7 @@ const translations = {
     switchToFollowUp: "Перейти к поддерживающей терапии",
     followUpTherapy: "Поддерживающая терапия",
     schemaInfo: (days, cycles) =>
-      `Данная схема лечения включает ${days} дней на цикл и проводится в течение ${cycles} циклов.`,
+      `Данная схема лечения включает <strong>${days} дней на цикл</strong> и проводится в течение <strong>${cycles} циклов</strong>.`,
     footerBlock: `Гинекологическая онкологическая амбулатория: 0241/6006-1685<br>Круглосуточная горячая линия: 0241/6006-0 (попросите соединить с дежурным гинекологом)`,
     morning: "(утром)",
     noon: "(в полдень)",
@@ -205,7 +205,7 @@ const translations = {
     switchToFollowUp: "Перейти до терапії після основної",
     followUpTherapy: "Терапія після основної",
     schemaInfo: (days, cycles) =>
-      `Ця схема лікування включає ${days} днів на цикл і проводиться протягом ${cycles} циклів.`,
+      `Ця схема лікування включає <strong>${days} днів на цикл</strong> і проводиться протягом <strong>${cycles} циклів</strong>.`,
     footerBlock: `Гінекологічна онкологічна амбулаторія: 0241/6006-1685<br>Цілодобова гаряча лінія: 0241/6006-0 (попросіть з'єднати з черговим гінекологом)`,
     morning: "(вранці)",
     noon: "(в полудень)",

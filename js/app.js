@@ -1,4 +1,3 @@
-/* /js/app.js
 /* =========================================
    THERAPY PLANNER – Option B (Restored Features)
    - i18n labels in dynamic HTML
@@ -607,11 +606,8 @@
     const birthRaw = DOM.geburt?.value || "";
     const birthDate = parseDateInput(birthRaw);
 
-    DOM.patient.innerHTML = `
+    return `
       <div style="border-bottom:2px solid #333; margin-bottom:20px; padding-bottom:10px;">
-        <h1 style="margin:0 0 10px 0; color:#2563eb; font-size:1.8rem;">
-          ${safeT("therapyPlanCreation")}: ${titleText}
-        </h1>
         <p style="margin:0; font-size:1.1rem; line-height:1.5;">
           <strong>${safeT("patient")}:</strong> ${DOM.vorname.value} ${DOM.nachname.value} |
           <strong>${safeT("birthdate")}:</strong> ${birthDate ? fmtDate(birthDate) : "—"}<br>
@@ -825,11 +821,29 @@
     let titleText = r.schema.label;
     if (r.hasFollowUp && r.followSchema) titleText += " → " + r.followSchema.label;
 
-    renderHeader(titleText, r.startDate);
-
+    
     // Graphic: show first main cycle
     DOM.graphic.innerHTML = "";
-    renderGraphicOneCycleInto(r.cyclesMain[0], DOM.graphic);
+    
+    // Print-only headline for main schema (before patient block in print)
+    const mainHeadline = document.createElement("h2");
+    mainHeadline.classList.add("plan-headline");
+    mainHeadline.style.margin = "0 0 1rem 0";
+    mainHeadline.textContent =
+    `${safeT("therapyPlanCreation")}: ${r.schema.label} - ${safeT("graphicOverview")} (1 ${safeT("cycle")})`;
+    DOM.graphic.appendChild(mainHeadline);
+    
+    // Print-only patient header for main schema
+    const mainPatientClone = document.createElement("div");
+    mainPatientClone.classList.add("plan-headline");
+    mainPatientClone.innerHTML = renderHeader(titleText, r.startDate);
+    DOM.graphic.appendChild(mainPatientClone);
+
+    // Actual graphic
+    const mainGraphicContainer = document.createElement("div");
+    DOM.graphic.appendChild(mainGraphicContainer);
+
+    renderGraphicOneCycleInto(r.cyclesMain[0], mainGraphicContainer);
 
     // Legend under graphic
     const hasAnyInjection =
@@ -840,20 +854,59 @@
     const legendWrapper = document.createElement("div");
     legendWrapper.innerHTML = renderLegend(r.schema, hasAnyInjection, hasAnyLab);
     DOM.graphic.appendChild(legendWrapper);
-
+    const footerClone = document.createElement("div");
+    footerClone.classList.add("print-footer-clone");
+    footerClone.classList.add("print-only");
+    footerClone.innerHTML = `
+      <div style="margin-top:0.5rem;">
+        ${safeT("footerBlock")}
+      </div>`;
+    DOM.graphic.appendChild(footerClone);
     if (r.hasFollowUp && r.followSchema && r.cyclesFollow) {
-
       const followWrapper = document.createElement("div");
+      // Screen-only separator before follow-up block
+      const separator = document.createElement("hr");
+      separator.classList.add("no-print");
+      DOM.graphic.appendChild(separator);
       followWrapper.classList.add("page-break-before");
 
-      followWrapper.innerHTML = `
-        <h2 style="margin-top:2rem;">
-          ${safeT("followUpTherapy")}: ${r.followSchema.label}
-        </h2>
-      `;
+      // Print-only headline for follow-up schema (before patient block)
+      const followHeadline = document.createElement("h2");
+      followHeadline.classList.add("plan-headline");
+      followHeadline.style.margin = "0 0 1rem 0";
+      followHeadline.textContent =
+        `${safeT("therapyPlanCreation")}: ${r.followSchema.label} - ${safeT("graphicOverview")} (1 ${safeT("cycle")})`;
+      followWrapper.appendChild(followHeadline);
 
+      // Build patient header for follow-up page (print only)
+      const followStartDate = r.cyclesFollow[0]?.days[0]?.date;
+      const followPatientClone = document.createElement("div");
+      followPatientClone.classList.add("plan-headline");
+      followPatientClone.innerHTML = `
+        <div style="border-bottom:2px solid #333; margin-bottom:20px; padding-bottom:10px;">
+          <p style="margin:0; font-size:1.1rem; line-height:1.5;">
+            <strong>${safeT("patient")}:</strong> ${DOM.vorname.value} ${DOM.nachname.value} |
+            <strong>${safeT("birthdate")}:</strong> ${
+              parseDateInput(DOM.geburt?.value || "")
+                ? fmtDate(parseDateInput(DOM.geburt.value))
+                : "—"
+            }<br>
+            <strong>${safeT("firstTherapyDate")}:</strong> ${
+              followStartDate ? fmtDate(followStartDate) : ""
+            }<br>
+            <span style="font-size:0.9rem; color:#666;">
+              ${safeT("createdOn")}: ${fmtDate(new Date())}
+            </span>
+          </p>
+        </div>
+      `;
+      followWrapper.appendChild(followPatientClone);
+
+      // Container for follow-up graphic
       const followGraphic = document.createElement("div");
       followWrapper.appendChild(followGraphic);
+
+      // Append entire follow block to graphic container
       DOM.graphic.appendChild(followWrapper);
 
       // Render first follow-up cycle
@@ -878,6 +931,14 @@
         followHasLab
       );
       followWrapper.appendChild(followLegendWrapper);
+      const footerClone2 = document.createElement("div");
+      footerClone2.classList.add("print-footer-clone");
+      footerClone2.classList.add("print-only");
+      footerClone2.innerHTML = `
+        <div>
+          ${safeT("footerBlock")}
+        </div>`;
+      followWrapper.appendChild(footerClone2);
     }
 
     // Table: include follow separator
@@ -893,6 +954,15 @@
     // Support dropdown is now filled; printing/rendering support can come next
     updatePrintSupportButton();
 
+    // Global footer for table + support print modes
+    const globalFooter = document.getElementById("print-footer");
+    if (globalFooter) {
+      globalFooter.innerHTML = `
+        <div style="margin-top:1rem; font-size:0.85rem;">
+          ${safeT("footerBlock")}
+        </div>
+      `;
+    }
     DOM.plan.style.display = "block";
     DOM.plan.scrollIntoView({ behavior: "smooth" });
   }
