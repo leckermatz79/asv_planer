@@ -129,6 +129,64 @@ body {
   font-size: 0.95rem;
 }
 
+/* ─── Support-Editor: Tagesblöcke & Medikamentenzeilen ─────── */
+
+.day-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 0.6rem;
+  overflow: hidden;
+}
+
+.day-block-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.day-block-header .ev-inline-label {
+  flex: 0 0 auto;
+}
+
+.sb-meds-list {
+  padding: 0.4rem 0.75rem;
+}
+
+.med-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.med-row:last-child {
+  border-bottom: none;
+}
+
+.med-row input[type="text"] {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  background: var(--white);
+}
+
+.med-name    { flex: 1; min-width: 120px; }
+.med-dosage  { width: 120px; }
+
+.med-note-key {
+  width: 110px;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--white);
+}
+
 /* ─── Toolbar & Tabelle ─────────────────────────────────────── */
 
 .tab-toolbar {

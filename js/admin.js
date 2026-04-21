@@ -93,6 +93,49 @@
     updateDirName();
   }
 
+  /* ─── Shared Schema-Tab Helper ──────────────────────────────────────────── */
+
+  function renderGenericSchemaList(tbodyId, schemas, getLabel, getExtraCells, handlers) {
+    const tbody = document.getElementById(tbodyId);
+    tbody.innerHTML = "";
+
+    const entries = Object.entries(schemas).sort(([idA, a], [idB, b]) => {
+      if (a._isCustom !== b._isCustom) return a._isCustom ? 1 : -1;
+      return getLabel(idA, a).localeCompare(getLabel(idB, b), "de");
+    });
+
+    if (entries.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:2rem">Keine Schemata vorhanden.</td></tr>`;
+      return;
+    }
+
+    entries.forEach(([id, schema]) => {
+      const tr = document.createElement("tr");
+      const extraCells = getExtraCells(id, schema).map(c => `<td>${c}</td>`).join("");
+      tr.innerHTML = `
+        <td>${getLabel(id, schema)}</td>
+        ${extraCells}
+        <td><span class="badge ${schema._isCustom ? "badge-custom" : "badge-builtin"}">${schema._isCustom ? "Custom" : "Built-in"}</span></td>
+        <td class="action-cell"></td>
+      `;
+      const cell = tr.querySelector(".action-cell");
+      const editBtn = makeBtn("Bearbeiten",  "btn-table",                  () => handlers.edit(id));
+      const dupBtn  = makeBtn("Duplizieren", "btn-table",                  () => handlers.duplicate(id));
+      const delBtn  = makeBtn("Löschen",     "btn-table btn-table-danger", () => handlers.delete(id, getLabel(id, schema)));
+      const expBtn  = makeBtn("Exportieren", "btn-table",                  () => handlers.export(id, schema));
+      delBtn.disabled = !schema._isCustom;
+      cell.append(editBtn, dupBtn, delBtn, expBtn);
+      tbody.appendChild(tr);
+    });
+  }
+
+  function exportSingleSchema(type, id, schema) {
+    const { _isCustom, ...clean } = schema;
+    const label    = schema.label || id;
+    const filename = label.replace(/[^\wäöüÄÖÜß]/g, "_").replace(/_+/g, "_") + ".json";
+    Persistence.exportToFile(filename, { [type]: { [id]: clean } });
+  }
+
   /* ─── Chemo-Schemata Tab ────────────────────────────────────────────────── */
 
   let _chemoEditingId = null;
@@ -349,6 +392,293 @@
     renderChemoList();
   }
 
+  /* ─── Support-Schemata Tab ──────────────────────────────────────────────── */
+
+  let _supportEditingId = null;
+  let _supportShowBuiltinNotice = false;
+
+  function showSupportList() {
+    document.getElementById("support-list-view").style.display = "";
+    document.getElementById("support-editor-view").style.display = "none";
+    renderSupportList();
+  }
+
+  function showSupportEditor() {
+    document.getElementById("support-list-view").style.display = "none";
+    document.getElementById("support-editor-view").style.display = "";
+    updateSupportEmptyHint();
+  }
+
+  function renderSupportList() {
+    renderGenericSchemaList(
+      "support-tbody",
+      SchemaStore.getSupportSchemas(),
+      (id, s)  => s.label || id,
+      (id, s)  => [s.version || "–", (s.days || []).length + " Tage"],
+      {
+        edit:      id           => openSupportEditor(id, "edit"),
+        duplicate: id           => openSupportEditor(id, "duplicate"),
+        delete:    (id, label)  => deleteSupportSchema(id, label),
+        export:    (id, schema) => exportSingleSchema("support", id, schema),
+      }
+    );
+  }
+
+  function openSupportEditor(id, mode) {
+    _supportEditingId        = null;
+    _supportShowBuiltinNotice = false;
+
+    const schema = id ? SchemaStore.getSupportSchemas()[id] : null;
+
+    document.getElementById("se-days-list").innerHTML = "";
+    document.getElementById("se-label").value         = "";
+    document.getElementById("se-version").value       = "";
+
+    if (mode === "new") {
+      document.getElementById("support-editor-title").textContent = "Neues Schema erstellen";
+    } else {
+      document.getElementById("se-label").value   = schema.label   || "";
+      document.getElementById("se-version").value = schema.version || "";
+      (schema.days || []).forEach(dayObj => addDayBlock(dayObj));
+
+      if (mode === "edit") {
+        document.getElementById("support-editor-title").textContent = "Schema bearbeiten";
+        if (schema._isCustom) { _supportEditingId = id; }
+        else                  { _supportShowBuiltinNotice = true; }
+      } else {
+        document.getElementById("support-editor-title").textContent = "Schema duplizieren";
+        document.getElementById("se-label").value = (schema.label || "") + " (Kopie)";
+      }
+    }
+
+    document.getElementById("support-builtin-notice").style.display = _supportShowBuiltinNotice ? "" : "none";
+    showSupportEditor();
+  }
+
+  function createMedRow(med) {
+    const row = document.createElement("div");
+    row.className = "med-row";
+    row.innerHTML = `
+      <input type="text" class="med-name"     placeholder="Medikament">
+      <input type="text" class="med-dosage"   placeholder="Dosierung (z.B. 1-0-0)">
+      <select class="med-note-key">
+        <option value="">–</option>
+        <option value="morning">Morgens</option>
+        <option value="evening">Abends</option>
+      </select>
+      <button type="button" class="btn-icon btn-icon-danger med-delete" title="Löschen">✕</button>
+    `;
+    row.querySelector(".med-name").value     = med.name    || "";
+    row.querySelector(".med-dosage").value   = med.dosage  || "";
+    row.querySelector(".med-note-key").value = med.noteKey || "";
+    row.querySelector(".med-delete").addEventListener("click", () => row.remove());
+    return row;
+  }
+
+  function createDayBlock(dayObj) {
+    const block = document.createElement("div");
+    block.className = "day-block";
+    block.innerHTML = `
+      <div class="day-block-header">
+        <label class="ev-inline-label">Tag <input type="number" class="sb-day" min="1"></label>
+        <button type="button" class="btn-secondary sb-add-med">+ Medikament</button>
+        <button type="button" class="btn-icon btn-icon-danger sb-delete-day" title="Tag löschen">✕</button>
+      </div>
+      <div class="sb-meds-list"></div>
+    `;
+
+    if (dayObj.day != null) block.querySelector(".sb-day").value = dayObj.day;
+
+    const medsList = block.querySelector(".sb-meds-list");
+    (dayObj.meds || []).forEach(med => medsList.appendChild(createMedRow(med)));
+
+    block.querySelector(".sb-add-med").addEventListener("click", () => medsList.appendChild(createMedRow({})));
+    block.querySelector(".sb-delete-day").addEventListener("click", () => {
+      block.remove();
+      updateSupportEmptyHint();
+    });
+
+    return block;
+  }
+
+  function addDayBlock(dayObj) {
+    document.getElementById("se-days-list").appendChild(createDayBlock(dayObj));
+    updateSupportEmptyHint();
+  }
+
+  function updateSupportEmptyHint() {
+    const empty = document.getElementById("se-days-list").children.length === 0;
+    document.getElementById("se-days-empty").style.display = empty ? "" : "none";
+  }
+
+  function readDayBlock(block) {
+    const day  = parseInt(block.querySelector(".sb-day").value, 10);
+    const meds = Array.from(block.querySelectorAll(".med-row")).map(row => {
+      const m = {
+        name:   row.querySelector(".med-name").value.trim(),
+        dosage: row.querySelector(".med-dosage").value.trim(),
+      };
+      const noteKey = row.querySelector(".med-note-key").value;
+      if (noteKey) m.noteKey = noteKey;
+      return m;
+    }).filter(m => m.name);
+    return { day: isNaN(day) ? null : day, meds };
+  }
+
+  function saveSupportEditor() {
+    const label   = document.getElementById("se-label").value.trim();
+    const version = document.getElementById("se-version").value.trim();
+
+    if (!label) { alert("Bitte einen Namen angeben."); return; }
+
+    const days = Array.from(document.getElementById("se-days-list").querySelectorAll(".day-block"))
+      .map(readDayBlock)
+      .filter(d => d.day != null);
+
+    const schema = { label, days };
+    if (version) schema.version = version;
+    if (_supportEditingId) schema._id = _supportEditingId;
+
+    SchemaStore.saveCustomSchema("support", schema);
+    showSupportList();
+  }
+
+  function deleteSupportSchema(id, label) {
+    if (!confirm(`Schema „${label}" wirklich löschen?`)) return;
+    SchemaStore.deleteCustomSchema("support", id);
+    renderSupportList();
+  }
+
+  function initSupportTab() {
+    document.getElementById("support-new-btn").addEventListener("click", () => openSupportEditor(null, "new"));
+    document.getElementById("se-add-day").addEventListener("click",     () => addDayBlock({}));
+    document.getElementById("se-save").addEventListener("click",        saveSupportEditor);
+    document.getElementById("se-cancel").addEventListener("click",      showSupportList);
+    renderSupportList();
+  }
+
+  /* ─── G-CSF-Schemata Tab ─────────────────────────────────────────────────── */
+
+  let _gcsfEditingId = null;
+  let _gcsfShowBuiltinNotice = false;
+
+  function showGcsfList() {
+    document.getElementById("gcsf-list-view").style.display = "";
+    document.getElementById("gcsf-editor-view").style.display = "none";
+    renderGcsfList();
+  }
+
+  function showGcsfEditor() {
+    document.getElementById("gcsf-list-view").style.display = "none";
+    document.getElementById("gcsf-editor-view").style.display = "";
+  }
+
+  function gcsfDaysDisplay(schema) {
+    if (schema.type === "multiple") return (schema.days || []).map(d => "d" + d).join(", ");
+    return schema.defaultDay != null ? "d" + schema.defaultDay : "–";
+  }
+
+  function renderGcsfList() {
+    renderGenericSchemaList(
+      "gcsf-tbody",
+      SchemaStore.getGcsfSchemas(),
+      (id)     => id,
+      (id, s)  => [s.type === "multiple" ? "Mehrfachdosis" : "Einzeldosis", gcsfDaysDisplay(s)],
+      {
+        edit:      id           => openGcsfEditor(id, "edit"),
+        duplicate: id           => openGcsfEditor(id, "duplicate"),
+        delete:    (id, label)  => deleteGcsfSchema(id, label),
+        export:    (id, schema) => exportSingleSchema("gcsf", id, schema),
+      }
+    );
+  }
+
+  function updateGcsfTypeFields() {
+    const type = document.getElementById("ge-type").value;
+    document.getElementById("ge-single-row").style.display   = type === "single"   ? "" : "none";
+    document.getElementById("ge-multiple-row").style.display = type === "multiple" ? "" : "none";
+  }
+
+  function openGcsfEditor(id, mode) {
+    _gcsfEditingId        = null;
+    _gcsfShowBuiltinNotice = false;
+
+    const schema = id ? SchemaStore.getGcsfSchemas()[id] : null;
+
+    document.getElementById("ge-name").value        = "";
+    document.getElementById("ge-type").value        = "single";
+    document.getElementById("ge-default-day").value = "";
+    document.getElementById("ge-days").value        = "";
+
+    if (mode === "new") {
+      document.getElementById("gcsf-editor-title").textContent = "Neues Schema erstellen";
+    } else {
+      document.getElementById("ge-name").value = mode === "duplicate" ? id + " (Kopie)" : id;
+      document.getElementById("ge-type").value = schema.type || "single";
+
+      if (schema.type === "multiple") {
+        document.getElementById("ge-days").value = (schema.days || []).join(", ");
+      } else {
+        document.getElementById("ge-default-day").value = schema.defaultDay ?? "";
+      }
+
+      if (mode === "edit") {
+        document.getElementById("gcsf-editor-title").textContent = "Schema bearbeiten";
+        if (schema._isCustom) { _gcsfEditingId = id; }
+        else                  { _gcsfShowBuiltinNotice = true; }
+      } else {
+        document.getElementById("gcsf-editor-title").textContent = "Schema duplizieren";
+      }
+    }
+
+    document.getElementById("gcsf-builtin-notice").style.display = _gcsfShowBuiltinNotice ? "" : "none";
+    updateGcsfTypeFields();
+    showGcsfEditor();
+  }
+
+  function saveGcsfEditor() {
+    const name = document.getElementById("ge-name").value.trim();
+    const type = document.getElementById("ge-type").value;
+
+    if (!name) { alert("Bitte einen Namen angeben."); return; }
+
+    const schema = { type };
+
+    if (type === "single") {
+      const day = parseInt(document.getElementById("ge-default-day").value, 10);
+      if (isNaN(day)) { alert("Bitte einen Applikationstag angeben."); return; }
+      schema.defaultDay = day;
+    } else {
+      const days = document.getElementById("ge-days").value
+        .split(",").map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+      if (days.length === 0) { alert("Bitte mindestens einen Applikationstag angeben."); return; }
+      schema.days = days;
+    }
+
+    // Für G-CSF ist der Medikamentenname der Key – bei Umbenennung alten Eintrag löschen
+    if (_gcsfEditingId && name !== _gcsfEditingId) {
+      SchemaStore.deleteCustomSchema("gcsf", _gcsfEditingId);
+    }
+    schema._id = name;
+
+    SchemaStore.saveCustomSchema("gcsf", schema);
+    showGcsfList();
+  }
+
+  function deleteGcsfSchema(id, label) {
+    if (!confirm(`Schema „${label}" wirklich löschen?`)) return;
+    SchemaStore.deleteCustomSchema("gcsf", id);
+    renderGcsfList();
+  }
+
+  function initGcsfTab() {
+    document.getElementById("gcsf-new-btn").addEventListener("click", () => openGcsfEditor(null, "new"));
+    document.getElementById("ge-type").addEventListener("change",     updateGcsfTypeFields);
+    document.getElementById("ge-save").addEventListener("click",      saveGcsfEditor);
+    document.getElementById("ge-cancel").addEventListener("click",    showGcsfList);
+    renderGcsfList();
+  }
+
   /* ─── Init ───────────────────────────────────────────────────────────────── */
 
   function init() {
@@ -361,6 +691,8 @@
     activateTab(getActiveTabFromHash());
     initSettings();
     initChemoTab();
+    initSupportTab();
+    initGcsfTab();
   }
 
   document.addEventListener("DOMContentLoaded", init);

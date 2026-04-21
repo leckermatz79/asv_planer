@@ -104,13 +104,118 @@
   </div>
 
   <div id="tab-support" class="tab-panel">
-    <h2>Support-Schemata</h2>
-    <div class="placeholder">Wird in Schritt 7 implementiert.</div>
+
+    <div id="support-list-view">
+      <div class="tab-toolbar">
+        <h2>Support-Schemata</h2>
+        <button type="button" id="support-new-btn" class="btn-primary">+ Neu erstellen</button>
+      </div>
+      <div class="table-wrapper">
+        <table class="schema-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Version</th>
+              <th>Tage</th>
+              <th>Herkunft</th>
+              <th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody id="support-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="support-editor-view" class="editor-view" style="display:none">
+      <div id="support-builtin-notice" class="notice" style="display:none">
+        Dieses Built-in Schema kann nicht überschrieben werden. Beim Speichern wird eine eigene Version als Custom-Schema angelegt.
+      </div>
+      <div class="tab-toolbar">
+        <h2 id="support-editor-title">Schema bearbeiten</h2>
+      </div>
+      <div class="editor-fields">
+        <div class="field-row">
+          <label for="se-label">Name</label>
+          <input type="text" id="se-label" placeholder="z.B. Akynzeo – Olanzapin">
+        </div>
+        <div class="field-row">
+          <label for="se-version">Version</label>
+          <input type="text" id="se-version" placeholder="z.B. v1.0 – 01/2026">
+        </div>
+      </div>
+      <div class="events-section">
+        <div class="events-header">
+          <h3>Tage</h3>
+          <button type="button" id="se-add-day" class="btn-secondary">+ Tag hinzufügen</button>
+        </div>
+        <div id="se-days-list"></div>
+        <p id="se-days-empty" class="events-empty" style="display:none">Noch keine Tage. Klicke auf „+ Tag hinzufügen".</p>
+      </div>
+      <div class="editor-actions">
+        <button type="button" id="se-save" class="btn-primary">Speichern</button>
+        <button type="button" id="se-cancel" class="btn-secondary">Abbrechen</button>
+      </div>
+    </div>
+
   </div>
 
   <div id="tab-gcsf" class="tab-panel">
-    <h2>G-CSF-Schemata</h2>
-    <div class="placeholder">Wird in Schritt 7 implementiert.</div>
+
+    <div id="gcsf-list-view">
+      <div class="tab-toolbar">
+        <h2>G-CSF-Schemata</h2>
+        <button type="button" id="gcsf-new-btn" class="btn-primary">+ Neu erstellen</button>
+      </div>
+      <div class="table-wrapper">
+        <table class="schema-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Typ</th>
+              <th>Applikationstag(e)</th>
+              <th>Herkunft</th>
+              <th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody id="gcsf-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="gcsf-editor-view" class="editor-view" style="display:none">
+      <div id="gcsf-builtin-notice" class="notice" style="display:none">
+        Dieses Built-in Schema kann nicht überschrieben werden. Beim Speichern wird eine eigene Version als Custom-Schema angelegt.
+      </div>
+      <div class="tab-toolbar">
+        <h2 id="gcsf-editor-title">Schema bearbeiten</h2>
+      </div>
+      <div class="editor-fields">
+        <div class="field-row">
+          <label for="ge-name">Name (Medikament)</label>
+          <input type="text" id="ge-name" placeholder="z.B. Pegfilgrastim">
+        </div>
+        <div class="field-row">
+          <label for="ge-type">Typ</label>
+          <select id="ge-type" style="padding:0.5rem 0.75rem;border:none;border-bottom:1px solid var(--border);border-left:1px solid var(--border);font-size:0.88rem;background:var(--white);outline:none;">
+            <option value="single">Einzeldosis</option>
+            <option value="multiple">Mehrfachdosis</option>
+          </select>
+        </div>
+        <div class="field-row" id="ge-single-row">
+          <label for="ge-default-day">Applikationstag</label>
+          <input type="number" id="ge-default-day" min="1" style="width:100px">
+        </div>
+        <div class="field-row" id="ge-multiple-row">
+          <label for="ge-days">Applikationstage</label>
+          <input type="text" id="ge-days" placeholder="z.B. 2, 3, 4, 5, 6">
+        </div>
+      </div>
+      <div class="editor-actions">
+        <button type="button" id="ge-save" class="btn-primary">Speichern</button>
+        <button type="button" id="ge-cancel" class="btn-secondary">Abbrechen</button>
+      </div>
+    </div>
+
   </div>
 
   <div id="tab-import-export" class="tab-panel">
