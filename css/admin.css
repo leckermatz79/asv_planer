@@ -1,0 +1,130 @@
+/* ============================================================
+   admin.css – Styles für admin.html
+   Setzt gleiche CSS-Variablen wie main.css voraus (--primary etc.)
+   ============================================================ */
+
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --text: #1f2937;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
+  --bg: #f9fafb;
+  --white: #ffffff;
+  --radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--bg);
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── Kopfzeile ─────────────────────────────────────────────── */
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  background: var(--white);
+  border-bottom: 2px solid var(--primary);
+}
+
+.admin-header h1 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--primary);
+  flex: 1;
+}
+
+.admin-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  transition: background 0.15s;
+}
+
+.admin-back:hover {
+  background: #eff6ff;
+}
+
+/* ─── Tab-Navigation ────────────────────────────────────────── */
+
+.admin-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 1rem 2rem 0;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  transition: color 0.15s, background 0.15s;
+  position: relative;
+  bottom: -1px;
+}
+
+.tab-btn:hover {
+  color: var(--primary);
+  background: #eff6ff;
+}
+
+.tab-btn.active {
+  color: var(--primary);
+  background: var(--white);
+  border-color: var(--border);
+  border-bottom-color: var(--white);
+  font-weight: 600;
+}
+
+/* ─── Tab-Inhalte ───────────────────────────────────────────── */
+
+.admin-content {
+  padding: 2rem;
+  max-width: 1200px;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+.tab-panel h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.placeholder {
+  padding: 3rem 2rem;
+  text-align: center;
+  color: var(--text-muted);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+}

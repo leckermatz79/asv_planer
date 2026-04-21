@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Therapieplan – Verwaltung</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" sizes="any">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<header class="admin-header">
+  <a class="admin-back" href="index.html">← Zum Therapieplaner</a>
+  <h1>Verwaltung</h1>
+</header>
+
+<nav class="admin-tabs">
+  <button class="tab-btn" data-tab="chemo">Chemotherapie-Schemata</button>
+  <button class="tab-btn" data-tab="support">Support-Schemata</button>
+  <button class="tab-btn" data-tab="gcsf">G-CSF-Schemata</button>
+  <button class="tab-btn" data-tab="import-export">Import / Export</button>
+  <button class="tab-btn" data-tab="einstellungen">Einstellungen</button>
+</nav>
+
+<main class="admin-content">
+
+  <div id="tab-chemo" class="tab-panel">
+    <h2>Chemotherapie-Schemata</h2>
+    <div class="placeholder">Wird in Schritt 6 implementiert.</div>
+  </div>
+
+  <div id="tab-support" class="tab-panel">
+    <h2>Support-Schemata</h2>
+    <div class="placeholder">Wird in Schritt 7 implementiert.</div>
+  </div>
+
+  <div id="tab-gcsf" class="tab-panel">
+    <h2>G-CSF-Schemata</h2>
+    <div class="placeholder">Wird in Schritt 7 implementiert.</div>
+  </div>
+
+  <div id="tab-import-export" class="tab-panel">
+    <h2>Import / Export</h2>
+    <div class="placeholder">Wird in Schritt 8 implementiert.</div>
+  </div>
+
+  <div id="tab-einstellungen" class="tab-panel">
+    <h2>Einstellungen</h2>
+    <div class="placeholder">Wird in Schritt 5 implementiert.</div>
+  </div>
+
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/persistence.js"></script>
+<script src="js/chemoSchemas.js"></script>
+<script src="js/supportSchemas.js"></script>
+<script src="js/gcsfSchemas.js"></script>
+<script src="js/schemaStore.js"></script>
+<script src="js/admin.js"></script>
+
+</body>
+</html>
