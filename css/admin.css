@@ -128,3 +128,105 @@ body {
   border-radius: var(--radius);
   font-size: 0.95rem;
 }
+
+/* ─── Einstellungs-Formular ─────────────────────────────────── */
+
+.settings-section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.settings-section legend {
+  font-weight: 600;
+  padding: 0 0.5rem;
+  color: var(--primary);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+}
+
+.settings-row + .settings-row {
+  border-top: 1px solid var(--border);
+}
+
+.settings-row label {
+  flex: 0 0 280px;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.settings-row input[type="text"],
+.settings-row select {
+  flex: 1;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  background: var(--white);
+}
+
+.settings-row input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  cursor: pointer;
+}
+
+.dir-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.dir-name {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.btn-primary {
+  padding: 0.55rem 1.2rem;
+  background: var(--primary);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.btn-secondary {
+  padding: 0.55rem 1.2rem;
+  background: var(--white);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-secondary:hover {
+  background: var(--bg);
+}

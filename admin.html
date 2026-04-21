@@ -46,7 +46,77 @@
 
   <div id="tab-einstellungen" class="tab-panel">
     <h2>Einstellungen</h2>
-    <div class="placeholder">Wird in Schritt 5 implementiert.</div>
+
+    <fieldset class="settings-section">
+      <legend>Speicherung</legend>
+      <div class="settings-row">
+        <label for="cfg-storage-mode">Speichermodus</label>
+        <select id="cfg-storage-mode">
+          <option value="local">Browser-Speicher (localStorage)</option>
+          <option value="file">Datei (File System Access)</option>
+        </select>
+      </div>
+      <div class="settings-row" id="cfg-dir-row">
+        <label>Exportordner</label>
+        <div class="dir-picker">
+          <span id="cfg-dir-name" class="dir-name">–</span>
+          <button type="button" id="cfg-dir-btn">Ordner auswählen</button>
+          <button type="button" id="cfg-dir-clear">Entfernen</button>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="settings-section">
+      <legend>Darstellung</legend>
+      <div class="settings-row">
+        <label for="cfg-language">Standardsprache</label>
+        <select id="cfg-language">
+          <option value="de-DE">Deutsch</option>
+          <option value="en-GB">English</option>
+          <option value="tr-TR">Türkçe</option>
+          <option value="pl-PL">Polski</option>
+          <option value="ru-RU">Русский</option>
+          <option value="uk-UA">Українська</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <label for="cfg-clinic-name">Klinikname</label>
+        <input type="text" id="cfg-clinic-name" placeholder="Erscheint im Druckheader">
+      </div>
+    </fieldset>
+
+    <fieldset class="settings-section">
+      <legend>Druckoptionen</legend>
+      <div class="settings-row">
+        <label for="cfg-default-view">Standard-Druckansicht</label>
+        <select id="cfg-default-view">
+          <option value="table">Tabelle</option>
+          <option value="graphic">Grafik</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <label for="cfg-show-source">Quellenangabe im Ausdruck anzeigen</label>
+        <input type="checkbox" id="cfg-show-source">
+      </div>
+    </fieldset>
+
+    <fieldset class="settings-section">
+      <legend>Administration</legend>
+      <div class="settings-row">
+        <label for="cfg-allow-custom">Custom Schemata erlauben</label>
+        <input type="checkbox" id="cfg-allow-custom">
+      </div>
+      <div class="settings-row">
+        <label for="cfg-require-source">Quellenangabe beim Erstellen erzwingen</label>
+        <input type="checkbox" id="cfg-require-source">
+      </div>
+    </fieldset>
+
+    <div class="settings-actions">
+      <button type="button" id="cfg-save" class="btn-primary">Einstellungen speichern</button>
+      <button type="button" id="cfg-reset" class="btn-secondary">Auf Standardwerte zurücksetzen</button>
+    </div>
+
   </div>
 
 </main>

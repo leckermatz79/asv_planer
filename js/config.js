@@ -2,6 +2,12 @@
 
   const STORAGE_KEY = "therapyplanner_config";
 
+  // Mapping locale → therapyplanner_lang-Kurzcode (für i18n.js-Sync)
+  const LOCALE_TO_LANG = {
+    "de-DE": "de", "en-GB": "en", "tr-TR": "tr",
+    "pl-PL": "pl", "ru-RU": "ru", "uk-UA": "ua",
+  };
+
   const DEFAULTS = {
     storage: {
       mode: "local",
@@ -76,6 +82,9 @@
     }, _config);
     target[last] = value;
     persist(_config);
+    if (key === "ui.language" && LOCALE_TO_LANG[value]) {
+      localStorage.setItem("therapyplanner_lang", LOCALE_TO_LANG[value]);
+    }
   }
 
   function getAll() {
