@@ -25,8 +25,82 @@
 <main class="admin-content">
 
   <div id="tab-chemo" class="tab-panel">
-    <h2>Chemotherapie-Schemata</h2>
-    <div class="placeholder">Wird in Schritt 6 implementiert.</div>
+
+    <!-- Listenansicht -->
+    <div id="chemo-list-view">
+      <div class="tab-toolbar">
+        <h2>Chemotherapie-Schemata</h2>
+        <button type="button" id="chemo-new-btn" class="btn-primary">+ Neu erstellen</button>
+      </div>
+      <div class="table-wrapper">
+        <table class="schema-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Zykluslänge</th>
+              <th>Zyklen</th>
+              <th>Herkunft</th>
+              <th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody id="chemo-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Editoransicht -->
+    <div id="chemo-editor-view" class="editor-view" style="display:none">
+
+      <div id="chemo-builtin-notice" class="notice" style="display:none">
+        Dieses Built-in Schema kann nicht überschrieben werden. Beim Speichern wird eine Kopie als Custom-Schema angelegt.
+      </div>
+
+      <div class="tab-toolbar">
+        <h2 id="chemo-editor-title">Schema bearbeiten</h2>
+      </div>
+
+      <div class="editor-fields">
+        <div class="field-row">
+          <label for="ce-label">Name</label>
+          <input type="text" id="ce-label" placeholder="z.B. EC q2w">
+        </div>
+        <div class="field-row">
+          <label for="ce-zyklus-tage">Zykluslänge (Tage)</label>
+          <input type="number" id="ce-zyklus-tage" min="1" style="width:100px">
+        </div>
+        <div class="field-row">
+          <label for="ce-anzahl-zyklen">Anzahl Zyklen</label>
+          <input type="number" id="ce-anzahl-zyklen" min="1" style="width:100px">
+        </div>
+        <div class="field-row">
+          <label for="ce-default-gcsf">G-CSF standardmäßig aktivieren</label>
+          <input type="checkbox" id="ce-default-gcsf">
+        </div>
+        <div class="field-row">
+          <label for="ce-source">Quellenangabe</label>
+          <input type="text" id="ce-source" placeholder="z.B. Onkopedia 2024, Blaue Reihe Bd. 3 S. 47">
+        </div>
+        <div class="field-row">
+          <label for="ce-version">Version</label>
+          <input type="text" id="ce-version" placeholder="z.B. 1.0 oder 2024-03">
+        </div>
+      </div>
+
+      <div class="events-section">
+        <div class="events-header">
+          <h3>Events</h3>
+          <button type="button" id="ce-add-event" class="btn-secondary">+ Event hinzufügen</button>
+        </div>
+        <div id="ce-events-list"></div>
+        <p id="ce-events-empty" class="events-empty" style="display:none">Noch keine Events. Klicke auf „+ Event hinzufügen".</p>
+      </div>
+
+      <div class="editor-actions">
+        <button type="button" id="ce-save" class="btn-primary">Speichern</button>
+        <button type="button" id="ce-cancel" class="btn-secondary">Abbrechen</button>
+      </div>
+
+    </div>
   </div>
 
   <div id="tab-support" class="tab-panel">
