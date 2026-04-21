@@ -39,7 +39,7 @@
 
   function loadSchemas() {
     // Schemas are now provided via external file (chemoSchemas.js)
-    AppState.schemas = window.CHEMO_SCHEMAS || {};
+    AppState.schemas = SchemaStore.getChemoSchemas();
   }
 
   function cacheDom() {
@@ -171,11 +171,11 @@
 
   function initSupportSchemas() {
     // Support schemas are now provided via external file (supportSchemas.js)
-    supportSchemas = window.SUPPORT_SCHEMAS || {};
+    supportSchemas = SchemaStore.getSupportSchemas();
   }
 
   function initGcsfSchemas() {
-    gcsfSchemas = window.GCSF_SCHEMAS || {};
+    gcsfSchemas = SchemaStore.getGcsfSchemas();
   }
   // =========================
   // SUPPORT PLAN RENDERER
