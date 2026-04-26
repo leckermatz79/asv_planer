@@ -219,8 +219,49 @@
   </div>
 
   <div id="tab-import-export" class="tab-panel">
-    <h2>Import / Export</h2>
-    <div class="placeholder">Wird in Schritt 8 implementiert.</div>
+
+    <section class="ie-section">
+      <h2>Export</h2>
+      <p class="ie-desc">Alle selbst erstellten Custom-Schemata als eine JSON-Datei exportieren. Built-in Schemata sind nicht enthalten.</p>
+      <button type="button" id="ie-export-btn" class="btn-primary">Alle Custom-Schemata exportieren</button>
+      <p id="ie-export-empty" class="ie-notice" style="display:none">Es sind keine Custom-Schemata vorhanden.</p>
+    </section>
+
+    <section class="ie-section">
+      <h2>Import</h2>
+      <p class="ie-desc">Eine zuvor exportierte JSON-Datei importieren. Konflikte (bereits vorhandene IDs) können per Strategie behandelt werden.</p>
+      <div class="ie-file-row">
+        <label for="ie-file-input" class="btn-secondary ie-file-label">Datei auswählen…</label>
+        <input type="file" id="ie-file-input" accept=".json" style="display:none">
+        <span id="ie-file-name" class="ie-file-name">Keine Datei ausgewählt</span>
+      </div>
+      <div id="ie-import-preview" class="ie-import-preview-box" style="display:none">
+        <div id="ie-preview-summary" class="ie-summary"></div>
+        <div id="ie-conflict-opts" class="ie-conflict-opts" style="display:none">
+          <p>Konfliktstrategie:</p>
+          <label class="ie-radio-label">
+            <input type="radio" name="ie-conflict" value="skip" checked>
+            Überspringen – vorhandene Schemata behalten (empfohlen)
+          </label>
+          <label class="ie-radio-label">
+            <input type="radio" name="ie-conflict" value="overwrite">
+            Überschreiben – vorhandene Schemata ersetzen
+          </label>
+          <label class="ie-radio-label">
+            <input type="radio" name="ie-conflict" value="rename">
+            Umbenennen – Kopien mit neuer ID anlegen
+          </label>
+        </div>
+        <button type="button" id="ie-import-start" class="btn-primary">Import starten</button>
+      </div>
+    </section>
+
+    <section class="ie-section ie-section-danger">
+      <h2>Werkszustand wiederherstellen</h2>
+      <p class="ie-desc">Alle Custom-Schemata dauerhaft löschen. Built-in Schemata bleiben erhalten. Diese Aktion kann nicht rückgängig gemacht werden.</p>
+      <button type="button" id="ie-reset-btn" class="btn-danger">Alle Custom-Schemata löschen</button>
+    </section>
+
   </div>
 
   <div id="tab-einstellungen" class="tab-panel">

@@ -679,6 +679,149 @@
     renderGcsfList();
   }
 
+  /* ─── Import / Export Tab ───────────────────────────────────────────────── */
+
+  let _importData = null;
+
+  function analyzeImportData(data) {
+    let newCount = 0, conflictCount = 0;
+    const existingCustom = SchemaStore.exportAllCustom();
+    for (const type of ["chemo", "support", "gcsf"]) {
+      if (!data[type] || typeof data[type] !== "object") continue;
+      const existing = existingCustom[type] || {};
+      for (const id of Object.keys(data[type])) {
+        if (existing[id]) conflictCount++;
+        else newCount++;
+      }
+    }
+    return { newCount, conflictCount };
+  }
+
+  function showImportPreview(newCount, conflictCount) {
+    const summary = document.getElementById("ie-preview-summary");
+    let html = "";
+    if (newCount > 0)      html += `<div class="ie-summary-row ie-summary-ok">✓ ${newCount} neue${newCount === 1 ? "s Schema" : " Schemata"} gefunden</div>`;
+    if (conflictCount > 0) html += `<div class="ie-summary-row ie-summary-warn">⚠ ${conflictCount} Konflikt${conflictCount === 1 ? "" : "e"} – Schema-ID${conflictCount === 1 ? "" : "s"} bereits vorhanden</div>`;
+    if (newCount === 0 && conflictCount === 0) html += `<div class="ie-summary-row">Keine importierbaren Schemata in dieser Datei.</div>`;
+    summary.innerHTML = html;
+
+    document.getElementById("ie-conflict-opts").style.display = conflictCount > 0 ? "" : "none";
+    document.querySelector('input[name="ie-conflict"][value="skip"]').checked = true;
+
+    const startBtn = document.getElementById("ie-import-start");
+    startBtn.style.display = "";
+    startBtn.disabled = (newCount === 0 && conflictCount === 0);
+
+    document.getElementById("ie-import-preview").style.display = "";
+  }
+
+  async function handleImportFileChange(file) {
+    _importData = null;
+    document.getElementById("ie-import-preview").style.display = "none";
+    if (!file) return;
+
+    let data;
+    try {
+      data = await Persistence.importFromFile(file);
+    } catch (e) {
+      alert("Fehler beim Lesen der Datei: " + e.message);
+      return;
+    }
+
+    const hasAny = ["chemo", "support", "gcsf"].some(
+      t => data[t] && typeof data[t] === "object" && Object.keys(data[t]).length > 0
+    );
+    if (!hasAny) {
+      alert("Die Datei enthält keine importierbaren Schemata.");
+      return;
+    }
+
+    _importData = data;
+    const { newCount, conflictCount } = analyzeImportData(data);
+    showImportPreview(newCount, conflictCount);
+  }
+
+  function executeImport() {
+    if (!_importData) return;
+
+    const strategy = document.querySelector('input[name="ie-conflict"]:checked').value;
+    const existingCustom = SchemaStore.exportAllCustom();
+    let imported = 0;
+    let suffix = Date.now();
+
+    for (const type of ["chemo", "support", "gcsf"]) {
+      if (!_importData[type] || typeof _importData[type] !== "object") continue;
+      const existing = existingCustom[type] || {};
+
+      for (const [id, schema] of Object.entries(_importData[type])) {
+        const isConflict = !!existing[id];
+        if (isConflict && strategy === "skip") continue;
+
+        let targetId = id;
+        if (isConflict && strategy === "rename") targetId = id + "_import_" + suffix++;
+
+        SchemaStore.saveCustomSchema(type, { ...schema, _id: targetId });
+        imported++;
+      }
+    }
+
+    const summary = document.getElementById("ie-preview-summary");
+    summary.innerHTML = `<div class="ie-summary-row ie-summary-ok">✓ ${imported} ${imported === 1 ? "Schema" : "Schemata"} erfolgreich importiert.</div>`;
+    document.getElementById("ie-conflict-opts").style.display = "none";
+    document.getElementById("ie-import-start").style.display = "none";
+
+    document.getElementById("ie-file-input").value = "";
+    document.getElementById("ie-file-name").textContent = "Keine Datei ausgewählt";
+    _importData = null;
+
+    renderChemoList();
+    renderSupportList();
+    renderGcsfList();
+  }
+
+  function handleExport() {
+    const data = SchemaStore.exportAllCustom();
+    const total = Object.values(data).reduce((sum, s) => sum + Object.keys(s).length, 0);
+    if (total === 0) {
+      document.getElementById("ie-export-empty").style.display = "";
+      return;
+    }
+    document.getElementById("ie-export-empty").style.display = "none";
+    const filename = "schemata_custom_" + new Date().toISOString().slice(0, 10) + ".json";
+    Persistence.exportToFile(filename, data);
+  }
+
+  function handleFactoryReset() {
+    const data = SchemaStore.exportAllCustom();
+    const total = Object.values(data).reduce((sum, s) => sum + Object.keys(s).length, 0);
+    if (total === 0) { alert("Es sind keine Custom-Schemata vorhanden."); return; }
+    if (!confirm(`Wirklich alle ${total} Custom-${total === 1 ? "Schema" : "Schemata"} unwiderruflich löschen?`)) return;
+
+    SchemaStore.resetAllCustom();
+    renderChemoList();
+    renderSupportList();
+    renderGcsfList();
+
+    const btn = document.getElementById("ie-reset-btn");
+    const orig = btn.textContent;
+    btn.textContent = "Gelöscht ✓";
+    btn.disabled = true;
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
+  }
+
+  function initImportExportTab() {
+    document.getElementById("ie-export-btn").addEventListener("click", handleExport);
+
+    document.getElementById("ie-file-input").addEventListener("change", e => {
+      const file = e.target.files[0];
+      document.getElementById("ie-file-name").textContent = file ? file.name : "Keine Datei ausgewählt";
+      handleImportFileChange(file || null);
+    });
+
+    document.getElementById("ie-import-start").addEventListener("click", executeImport);
+    document.getElementById("ie-reset-btn").addEventListener("click", handleFactoryReset);
+  }
+
   /* ─── Init ───────────────────────────────────────────────────────────────── */
 
   function init() {
@@ -693,6 +836,7 @@
     initChemoTab();
     initSupportTab();
     initGcsfTab();
+    initImportExportTab();
   }
 
   document.addEventListener("DOMContentLoaded", init);

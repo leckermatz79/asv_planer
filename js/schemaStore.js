@@ -104,6 +104,12 @@
     return imported;
   }
 
+  function resetAllCustom() {
+    for (const type of Object.keys(STORAGE_KEYS)) {
+      persistCustom(type, {});
+    }
+  }
+
   window.SchemaStore = {
     getChemoSchemas,
     getSupportSchemas,
@@ -112,6 +118,7 @@
     deleteCustomSchema,
     exportAllCustom,
     importCustom,
+    resetAllCustom,
   };
 
 })();
